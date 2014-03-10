@@ -1,0 +1,94 @@
+= editions
+OpenDevise,_Inc.
+:doctype: manpage
+:man manual: Editions Manual
+:man source: Editions 1.0.0.snapshot
+
+== NAME
+
+editions - publish periodicals from articles composed in AsciiDoc
+
+== SYNOPSIS
+
+*editions* [_COMMAND_] [_OPTION_]...
+
+== DESCRIPTION
+
+*editions* is a toolchain for publishing periodicals that are aggregated from articles stored in GitHub repositories and composed in AsciiDoc.
+
+== GLOBAL OPTIONS
+
+*-h, --help*::
+  Show this message
+
+*-P, --profile=<name>*::
+  Run using the specified configuration profile (defaults to none)
++
+Also used as the prefix for this periodical's resources.
+
+*-y, --[no-]batch*::
+  Assume that the answer to any question which would be asked is 'y' or 'yes'
+
+*-v, --version*::
+  Display the program version
+
+== COMMANDS
+
+=== *config*
+
+Prepare your environment for using editions
+
+==== OPTIONS
+
+*-h, --homepage "<url>"*::
+  the homepage URL of the periodical (defaults to none)
+
+*-o, --org <login>*::
+  the GitHub organization for this periodical (defaults to the <username>)
+
+*-t, --title "<text>"*::
+  the title of the periodical (defaults to none)
+
+*-u, --username <login>*::
+  the GitHub username (i.e., login) of the periodical's administrator (defaults to none)
+
+*--netrc*::
+  read credentials from your netrc file ($HOME/.netrc)
+
+*-p, --private*::
+  Use private repositories on GitHub
+
+=== *dump*
+
+Print a summary of the environment
+
+=== *init*
+
+Initialize the article repositories
+
+==== OPTIONS
+
+*-a, --authors <login>[,<login>]**::
+  A comma-separated list of usernames of the contributing authors (defaults to none)
+
+*-p, --period <date>*::
+  The period of the issue (e.g., 2014-03) (defaults to current month and year)
+
+=== *clone*
+
+Clone the article repositories
+
+=== *help*
+
+Shows a list of commands or help for one command
+
+Gets help for the application or its commands. Can also list the commands in a way helpful to creating a bash-style completion function
+
+==== OPTIONS
+
+*-c*::
+  List commands one per line, to assist with shell completion
+
+== DEFAULT COMMAND
+
+dump
