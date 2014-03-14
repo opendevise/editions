@@ -87,10 +87,13 @@ class RepositoryManager
     ::Dir.mktmpdir 'rugged-' do |clone_dir|
       repo_clone = try_try_again limit: 3, wait: 1, message: 'Repository not yet available. Retrying in 1s...' do
         # TODO perhaps only use the access token when calling push?
+        # TODO move this logic to Refined::Repository.clone_at
         if ::Rugged.features.include? :https
           ::Rugged::Repository.clone_at %(#{clone_repository_root}#{repo_qname}.git), clone_dir
         else
-          %x(git clone #{clone_repository_root}#{repo_qname}.git #{clone_dir})
+          ::Open3.popen3 %(git clone #{clone_repository_root}#{repo_qname}.git #{clone_dir}) do |i, o, e, t|
+            t.value
+          end
           ::Rugged::Repository.new clone_dir
         end
       end
@@ -143,11 +146,12 @@ class RepositoryManager
         tree: commit_tree,
         update_ref: 'HEAD'
 
+      # TODO move this to logic to Refined::Repository.push
       if ::Rugged.features.include? :https
         repo_clone.push 'origin', ['refs/heads/master']
       else
-        ::Dir.chdir repo_clone.workdir do
-          %x(git push origin master)
+        ::Open3.popen3 'git push origin master', chdir: repo_clone.workdir do |i, o, e, t|
+          t.value
         end
       end
       # NOTE backwards compatibility hack for 0.19.0
@@ -238,10 +242,13 @@ class RepositoryManager
     ::Dir.mktmpdir 'rugged-' do |clone_dir|
       repo_clone = try_try_again limit: 3, wait: 1, message: 'Repository not yet available. Retrying in 1s...' do
         # TODO perhaps only use the access token when calling push?
+        # TODO move this logic to Refined::Repository.clone_at
         if ::Rugged.features.include? :https
           ::Rugged::Repository.clone_at %(#{clone_repository_root}#{repo_qname}.git), clone_dir
         else
-          %x(git clone #{clone_repository_root}#{repo_qname}.git #{clone_dir})
+          ::Open3.popen3 %(git clone #{clone_repository_root}#{repo_qname}.git #{clone_dir}) do |i, o, e, t|
+            t.value
+          end
           ::Rugged::Repository.new clone_dir
         end
       end
@@ -298,11 +305,12 @@ include::#{article_repo_name}/#{article_repo_name}.adoc[]
         tree: commit_tree,
         update_ref: 'HEAD'
 
+      # TODO move this to logic to Refined::Repository.push
       if ::Rugged.features.include? :https
         repo_clone.push 'origin', ['refs/heads/master']
       else
-        ::Dir.chdir repo_clone.workdir do
-          %x(git push origin master)
+        ::Open3.popen3 'git push origin master', chdir: repo_clone.workdir do |i, o, e, t|
+          t.value
         end
       end
     end
@@ -340,7 +348,7 @@ include::#{article_repo_name}/#{article_repo_name}.adoc[]
     begin
       yield
     rescue => e
-      if retry_count < retry_limit
+      if attempts < retry_limit
         attempts += 1
         say_warning retry_message
         sleep retry_wait if retry_wait > 0

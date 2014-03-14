@@ -7,6 +7,7 @@ require 'yaml'
 autoload :Base64, 'base64'
 autoload :DateTime, 'date'
 autoload :FileUtils, 'fileutils'
+autoload :Open3, 'open3'
 autoload :Octokit, File.expand_path('autoload/octokit.rb', File.dirname(__FILE__))
 autoload :Rugged, File.expand_path('autoload/rugged.rb', File.dirname(__FILE__))
 
