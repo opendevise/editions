@@ -150,7 +150,10 @@ class RepositoryManager
           %x(git push origin master)
         end
       end
-      last_commit_sha = repo_clone.head.target_id
+      # NOTE backwards compatibility hack for 0.19.0
+      unless (last_commit_sha = repo_clone.head.target).is_a? String
+        last_commit_sha = repo_clone.head.target_id
+      end
     end
     last_commit_sha
   end
