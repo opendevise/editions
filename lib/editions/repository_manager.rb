@@ -120,7 +120,9 @@ class RepositoryManager
       seed_files = {
         'README.adoc'        => (template_contents templates_repo_qname, 'author-readme.adoc', template_vars),
         %(#{repo_name}.adoc) => (template_contents templates_repo_qname, 'article-template.adoc', template_vars),
-        'bio.adoc'           => (past_bio_contents || (template_contents templates_repo_qname, 'bio-template.adoc', template_vars))
+        'bio.adoc'           => (past_bio_contents || (template_contents templates_repo_qname, 'bio-template.adoc', template_vars)),
+        'code/.gitkeep'      => '',
+        'images/.gitkeep'    => ''
       }
 
       index = repo_clone.index
@@ -129,6 +131,7 @@ class RepositoryManager
       index.remove 'README.md'
 
       seed_files.each do |filename, contents|
+        ::FileUtils.mkdir_p ::File.join(repo_clone.workdir, (::File.dirname filename)) if filename.end_with? '/.gitkeep'
         ::File.open(::File.join(repo_clone.workdir, filename), 'w') {|fd| fd.write contents }
         index.add path: filename, oid: (::Rugged::Blob.from_workdir repo_clone, filename), mode: 0100644
       end
