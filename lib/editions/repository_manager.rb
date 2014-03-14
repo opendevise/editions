@@ -98,9 +98,17 @@ class RepositoryManager
         end
       end
 
+      if (author_uri = repo.author.email).nil_or_empty?
+        if (author_uri = repo.author.blog).nil_or_empty?
+          author_uri = %(https://github.com/#{repo.author.login})
+        else
+          author_uri = %(http://#{author_uri}) unless author_uri.start_with? 'http'
+        end
+      end
+
       template_vars = {
         author_name: repo.author.name,
-        author_email: repo.author.email,
+        author_email: author_uri,
         repository_name: repo.name,
         repository_desc: repo.description,
         repository_url: %(https://github.com/#{repo.full_name}),
