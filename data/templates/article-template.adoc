@@ -1,0 +1,12 @@
+= Article Title
+{template_author_name}
+:imagesdir: images
+
+[abstract]
+--
+Write the abstract here.
+--
+
+== Section Title
+
+Write me.

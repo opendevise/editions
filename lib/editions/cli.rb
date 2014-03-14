@@ -2,12 +2,13 @@ require 'gli'
 require_relative 'gli_ext'
 require 'highline/import'
 require 'commander/user_interaction'
-
-require 'date'
-require 'ostruct'
 require 'yaml'
 
+autoload :Base64, 'base64'
+autoload :DateTime, 'date'
+autoload :FileUtils, 'fileutils'
 autoload :Octokit, File.expand_path('autoload/octokit.rb', File.dirname(__FILE__))
+autoload :Rugged, File.expand_path('autoload/rugged.rb', File.dirname(__FILE__))
 
 include GLI::App
 include Commander::UI
@@ -21,10 +22,16 @@ sort_help :manually
 subcommand_option_handling :normal
 use_openstruct true
 
+# Custom types
+accept Editions::EditionNumber do |value|
+  Editions::EditionNumber.parse value
+end
+
 # Global arguments
 flag :P, :profile,
   arg_name: '<name>',
-  desc: 'Run using the specified configuration profile. (Also used as the prefix for this periodical\'s resources).'
+  desc: 'Run using the specified configuration profile. (Also used as the prefix for this periodical\'s resources).',
+  default_value: ENV['EDITIONS_PROFILE']
 
 switch :y, :batch,
   desc: 'Assume that the answer to any question which would be asked is \'y\' (yes)',
@@ -42,7 +49,7 @@ end
 on_error do |ex|
   if ex.is_a? Interrupt
     # add extra endline if Ctrl+C is used
-    puts
+    $terminal.newline
     false
   else
     true
@@ -58,8 +65,10 @@ around do |global, command, opts, args, code|
 end
 =end
 
+require_relative 'command/version'
+require_relative 'command/console'
 require_relative 'command/config'
-require_relative 'command/dump'
+require_relative 'command/info'
 require_relative 'command/init'
 require_relative 'command/purge'
 require_relative 'command/clone'
