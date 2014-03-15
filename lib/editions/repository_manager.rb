@@ -301,6 +301,10 @@ include::#{article_repo_name}/#{article_repo_name}.adoc[]
       ::File.open(::File.join(repo_clone.workdir, master_doc_filename), 'w') {|fd| fd.write master_doc_content }
       index.add path: master_doc_filename, oid: (::Rugged::Blob.from_workdir repo_clone, master_doc_filename), mode: 0100644
 
+      ::Dir.mkdir ::File.join(repo_clone.workdir, 'jacket')
+      ::File.open(::File.join(repo_clone.workdir, 'jacket/.gitkeep'), 'w') {|fd| fd.write '' }
+      index.add path: 'jacket/.gitkeep', oid: (::Rugged::Blob.from_workdir repo_clone, 'jacket/.gitkeep'), mode: 0100644
+
       ::File.unlink(::File.join repo_clone.workdir, 'README.md')
       index.remove 'README.md'
 
