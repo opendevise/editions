@@ -12,11 +12,11 @@ command :info do |cmd|
     say config.pub_producer
     color 'Organization: ', :bold
     say config.hub_organization
-    color 'Adminitrator: ', :bold
-    say '%s <%s>' % [config.git_name, config.git_email]
     color 'Username: ', :bold
     say config.hub_username
+    color 'Editor: ', :bold
+    say '%s <%s>' % [config.git_name, config.git_email]
     color 'Repository Access: ', :bold
-    say config.repository_access
+    say config.repository_access.to_s
   end
 end
