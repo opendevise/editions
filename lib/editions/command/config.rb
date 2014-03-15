@@ -40,8 +40,7 @@ command :config do |cmd|; cmd.instance_eval do
 
   action do |global, opts, args|
     if (username = opts.username).nil_or_empty?
-      # TODO make the error report itself use a color
-      raise GLI::CommandException.new $terminal.color(%(username cannot be empty), :red), self
+      raise GLI::CommandException.new 'username cannot be empty', self
     end
 
     # NOTE password can be an existing OAuth token, though it must have user priviledge
@@ -53,19 +52,20 @@ command :config do |cmd|; cmd.instance_eval do
       # NOTE verify authentication credentials by attempting to fetch the current user
       hub.user
     rescue Octokit::Unauthorized
-      raise GLI::CommandException.new $terminal.color(%(failed to authenticate #{username}), :red), self
+      raise GLI::CommandException.new %(failed to authenticate #{username}), self
     end
 
     # TODO verify we have proper authorization scopes
+    access_token_name = %(editions#{global.profile ? %[-#{global.profile}] : nil})
     access_token = begin
       # NOTE if the request for authorization fails, assume the password is the token
       (hub.create_authorization \
         scopes: %w(delete_repo repo user:email),
-        note: %(editions#{global.profile ? %[-#{global.profile}] : nil}),
+        note: access_token_name,
         note_url: opts.homepage).token
     rescue Octokit::UnprocessableEntity
-      exit_now! $terminal.color %(A personal access token named 'editions-#{global.profile || 'global'}' already exists for #{username}.
-Please navigate to Account Settings > Applications on GitHub and remove it.), :red
+      exit_now! %(A personal access token named '#{access_token_name}' already exists for #{username}.
+Please navigate to Account Settings > Applications on GitHub and remove it.)
     rescue
       # QUESTION should we instead save the options Hash for Octokit::Client in the config?? (in this case netrc)
       say_warning 'Cannot create personal access token with credentials provided. Assuming password provided is an OAuth token.'
@@ -78,7 +78,7 @@ Please navigate to Account Settings > Applications on GitHub and remove it.), :r
 
     # only needed if using token-based authentication
     #if user_resource.login != username
-    #  raise GLI::CommandException.new $terminal.color(%(error: username does match login of authentication token), :red), self
+    #  raise GLI::CommandException.new 'username does match login of authentication token', self
     #end
 
     # TODO validate the org is an organization on GitHub

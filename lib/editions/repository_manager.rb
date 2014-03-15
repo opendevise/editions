@@ -59,11 +59,11 @@ class RepositoryManager
     repo_desc = '%s\'s %s article for %s' % [author_name, edition.month_formatted, edition.periodical.name]
     begin
       repo = @hub.repo repo_qname
-      say_warning %(The repository #{repo_qname} for #{author_name} has already been created.)
+      say_warning %(The repository #{repo_qname} for #{author_name} already exists)
       repo.author = author_resource
       return repo
     rescue; end
-    return unless options[:batch] || (agree %(Create the repository #{repo_qname} for #{author_name}? [y/n] ))
+    return unless options[:batch] || (agree %(Create the repository #{colorize repo_qname, :bold} for #{colorize author_name, :bold}? [y/n] ))
     repo = @hub.create_repo repo_name,
       organization: org,
       homepage: edition.periodical.url,
@@ -73,6 +73,7 @@ class RepositoryManager
       has_downloads: false,
       private: (@repository_access == :private),
       auto_init: true
+    say_ok %(Successfully created the repository #{repo_qname})
     repo.author = author_resource
     repo
   end
@@ -188,14 +189,14 @@ class RepositoryManager
       return
     end
 
-    return unless options[:batch] || (agree %(Are you *absolutely* sure you want to delete the repository #{repo_qname}? [y/n] ))
+    return unless options[:batch] || (agree %(Are you *#{colorize 'absolutely', :underline}* sure you want to delete the repository #{colorize repo_qname, :bold}? [y/n] ))
     # NOTE If OAuth is used, 'delete_repo' scope is required
     # QUESTION should we remove the author from the contributor team?
     if @hub.delete_repo repo_qname
-      say_ok %(Successfully deleted the repository #{repo_qname}.)
+      say_ok %(Successfully deleted the repository #{repo_qname})
     else
       # NOTE this likely happens because the client isn't authenticated or doesn't have the delete_repo scope
-      say_warning %(The repository #{repo_qname} could not be deleted.)
+      say_warning %(The repository #{repo_qname} could not be deleted)
     end
   end
 
@@ -205,14 +206,14 @@ class RepositoryManager
     root_name = [edition.periodical.slug, edition.month].compact * '-'
     (@hub.org_repos org, type: @repository_access).select {|repo| repo.name.start_with? root_name }.each do |repo|
       repo_qname = repo.full_name
-      next unless options[:batch] || (agree %(Are you *absolutely* sure you want to delete the repository #{repo_qname}? [y/n] ))
+      next unless options[:batch] || (agree %(Are you *#{colorize 'absolutely', :underline}* sure you want to delete the repository #{colorize repo_qname, :bold}? [y/n] ))
       # NOTE If OAuth is used, 'delete_repo' scope is required
       # QUESTION should we remove the author from the contributor team?
       if @hub.delete_repo repo_qname
-        say_ok %(Successfully deleted the repository #{repo_qname}.)
+        say_ok %(Successfully deleted the repository #{repo_qname})
       else
         # NOTE this likely happens because the client isn't authenticated or doesn't have the delete_repo scope
-        say_warning %(The repository #{repo_qname} could not be deleted.)
+        say_warning %(The repository #{repo_qname} could not be deleted)
       end
     end
   ensure
@@ -226,12 +227,12 @@ class RepositoryManager
 
     begin
       repo = @hub.repo repo_qname
-      say_warning %(The master repository #{repo_qname} has already been created.)
+      say_warning %(The master repository #{repo_qname} already exists)
       return repo
     rescue; end
-    return unless options[:batch] || (agree %(Create the master repository #{repo_qname}? [y/n] ))
+    return unless options[:batch] || (agree %(Create the master repository #{colorize repo_qname, :bold}? [y/n] ))
 
-    @hub.create_repo repo_name,
+    repo = @hub.create_repo repo_name,
       organization: org,
       homepage: edition.periodical.url,
       description: repo_desc,
@@ -240,6 +241,8 @@ class RepositoryManager
       has_downloads: false,
       private: (@repository_access == :private),
       auto_init: true
+    say_ok %(Successfully created the repository #{repo_qname})
+    repo
   end
 
   #--

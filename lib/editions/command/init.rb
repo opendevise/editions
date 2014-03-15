@@ -1,35 +1,31 @@
 desc 'Create and seed the article repositories for an edition'
-command :init do |cmd|
-  cmd.instance_eval do
-
+command :init do |cmd|; cmd.instance_eval do
   flag :e, :edition,
     arg_name: '<edition>',
     desc: %(The volume and issue number of this edition (e.g., 5.1)),
     required: true,
-    type: Editions::EditionNumber, # parses volume and issue number parts into an Array
+    type: Editions::EditionNumber, # parses volume and issue number parts into Array
     must_match: Editions::EditionNumberRx
 
   flag :a, :authors,
     arg_name: '<login>[,<login>]*',
-    desc: 'A comma-separated list of usernames of the contributing authors',
-    #required: true,
+    desc: 'A comma-separated list of usernames of the contributing authors (will prompt if not specified)',
     type: Array
 
   flag :p, :pubdate,
     arg_name: '<date>',
-    desc: %(The publication date of the issue (e.g., #{current_month = Time.now.strftime '%Y-%m'})),
+    desc: %(The publication date of this edition (e.g., #{current_month = Time.now.strftime '%Y-%m'})),
     default_value: current_month
 
-  action do |global, opts, args|
-    unless (config = global.config)
-      exit_now! $terminal.color(%(error: #{global.profile || 'default'} profile does not exist. Please run `config' to configure your environment.), :red)
-    end
+  config_required
 
+  action do |global, opts, args|
     if opts.authors.nil_or_empty?
       opts.authors = ask 'Enter the username of each author: ', ->(s) { s.split /(?:\s*,\s*|\s+)/ }
-      help_now! $terminal.color('You must specify at least one username.', :red) if opts.authors.empty?
+      help_now! 'you must specify at least one username' if opts.authors.empty?
     end
 
+    config = global.config
     hub = Editions::Hub.connect config, %w(repo)
     edition = Editions::Edition.new opts.edition, nil, opts.pubdate, (periodical = Editions::Periodical.from config)
     manager = Editions::RepositoryManager.new hub, config.git_name, config.git_email, config.repository_access

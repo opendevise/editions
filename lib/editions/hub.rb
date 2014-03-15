@@ -13,10 +13,10 @@ class Hub
         begin
           client.user
         rescue ::Octokit::Unauthorized
-          exit_now! $terminal.color('Invalid access token. Please run `config\' again to properly configure your environment.', :red)
+          exit_now! %(invalid access token\nPlease run '#{exe_name} config' again to properly configure your environment.)
         end
         unless require_scopes.nil_or_empty? || (missing_scopes = (require_scopes - client.scopes)).empty?
-          exit_now! $terminal.color(%(#{client.user.login} is missing the following authorization scopes necessary to perform this operation: #{missing_scopes * ', '}), :red)
+          exit_now! %(#{client.user.login} is missing the following authorization scopes necessary to perform this operation: #{missing_scopes * ', '})
         end
         return client
       elsif credentials.is_a? ::Hash

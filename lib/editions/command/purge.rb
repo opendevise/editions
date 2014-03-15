@@ -17,18 +17,17 @@ command :purge do |cmd|; cmd.instance_eval do
     desc: 'A comma-separated list of usernames of the contributing authors',
     type: Array
 
-  action do |global, opts, args|
-    unless (config = global.config)
-      exit_now! color(%(error: #{global.profile || 'default'} profile does not exist. Please run `config' to configure your environment.), :red)
-    end
+  config_required
 
+  action do |global, opts, args|
+    config = global.config
     hub = Editions::Hub.connect config, %w(repo delete_repo)
     edition = Editions::Edition.new nil, nil, opts.pubdate, (periodical = Editions::Periodical.from config)
     manager = Editions::RepositoryManager.new hub, config.git_name, config.git_email, config.repository_access
     if opts.authors.nil_or_empty?
       manager.delete_all_article_repositories config.hub_organization, edition, batch: global.batch
     else
-      manager.delete_article_repositories config.hub_organization, authors, edition, batch: global.batch
+      manager.delete_article_repositories config.hub_organization, opts.authors, edition, batch: global.batch
     end
   end
 end; end

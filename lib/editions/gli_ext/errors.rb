@@ -1,12 +1,11 @@
 module GLI
   module CustomErrorSupport
     def error_message ex
-      if ex.is_a? UnknownCommandArgument
-        '%s: %s for %s command' % [exe_name, ex.message, ex.command_in_context.name]
-      #elsif ex.is_a? UnknownGlobalArgument
-      #  '%s: %s' % [exe_name, ex.message]
+      if (ex.is_a? CommandException)
+        qualified_message = '%s in %s command' % [ex.message, ex.command_in_context.name]
+        '%s: %s' % [exe_name, (colorize qualified_message, :red)]
       else
-        super
+        '%s: %s' % [exe_name, (colorize super.sub(/^error: (?:parse error: )?/, ''), :red)]
       end
     end
   end
@@ -19,8 +18,9 @@ module GLI
             select(&:required?).
             reject {|opt| !!options[opt.name] }
         unless missing.empty?
-          summary = missing.map {|opt| %(  #{opt.all_forms} is required) } * "\n"
-          raise BadCommandLine, %(missing required option#{missing.size > 1 ? 's' : nil}:\n#{summary})
+          summary = missing.map {|opt| %(    #{opt.all_forms} is required) } * "\n"
+          # FIXME we don't have the context to report the command for which the argument is missing
+          raise BadCommandLine, %(missing required option#{missing.size > 1 ? 's' : nil}\n#{summary})
         end
       end 
     end

@@ -14,6 +14,11 @@ autoload :Rugged, File.expand_path('autoload/rugged.rb', File.dirname(__FILE__))
 include GLI::App
 include Commander::UI
 
+# restore top-level color function
+def colorize *args
+  $terminal.color(*args)
+end
+
 program_desc 'publish periodicals from articles composed in AsciiDoc'
 version Editions::VERSION
 
@@ -44,6 +49,9 @@ pre do |global, cmd, opts, args|
   # NOTE can't use global.config_file since it's a built-in function name in gli
   global.conf_file = conf_file = File.expand_path conf_basename, ENV['HOME']
   global.config = OpenStruct.new(YAML.load_file conf_file) if File.exist? conf_file
+  if (cmd.respond_to? :config_required?) && cmd.config_required? && !global.config
+    exit_now! %(#{global.profile || 'default'} profile does not exist\nPlease run '#{exe_name} config' to configure your environment.)
+  end
   true
 end
 

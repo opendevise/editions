@@ -10,10 +10,10 @@ command :clone do |cmd|; cmd.instance_eval do
     desc: %(The period of the issue (e.g., #{Time.now.strftime '%Y-%m'})),
     default_value: (Time.now.strftime '%Y-%m')
 
+  config_required
+
   action do |global, opts, args|
-    # TODO make retrieval and validation of config a utility method
     config = global.config
-    exit_now! color(%(error: #{global.profile || 'global'} profile does not exist. Please run `config' to configure your environment.), :red) unless config
 
     # QUESTION should we be more intelligent about how the working directory is built?
     edition_slug = global.profile ? %(#{global.profile}-#{opts.period}) : opts.period
@@ -31,7 +31,5 @@ command :clone do |cmd|; cmd.instance_eval do
       log 'git clone', repo.full_name, (File.join Dir.pwd, repo.name)
       Rugged::Repository.clone_at %(https://#{config.username}:#{config.access_token}@github.com/#{repo.full_name}.git), repo.name
     end
-
-    # TODO make the master file
   end
 end; end

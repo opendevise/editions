@@ -1,9 +1,8 @@
 desc 'Print a summary of the environment'
-command :info do |cmd|
-  cmd.action do |global, opts, args|
-    unless (config = global.config)
-      exit_now! color(%(error: #{global.profile || 'default'} profile does not exist. Please run `config' to configure your environment.), :red)
-    end
+command :info do |cmd|; cmd.instance_eval do
+  config_required
+  action do |global, opts, args|
+    config = global.config
     color 'Profile: ', :bold
     say config.profile
     color 'Publication: ', :bold
@@ -19,4 +18,4 @@ command :info do |cmd|
     color 'Repository Access: ', :bold
     say config.repository_access.to_s
   end
-end
+end; end
