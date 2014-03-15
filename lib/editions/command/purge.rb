@@ -26,9 +26,9 @@ command :purge do |cmd|; cmd.instance_eval do
     edition = Editions::Edition.new nil, nil, opts.pubdate, (periodical = Editions::Periodical.from config)
     manager = Editions::RepositoryManager.new hub, config.git_name, config.git_email, config.repository_access
     if opts.authors.nil_or_empty?
-      manager.delete_all_article_repositories config.hub_organization, edition, batch: opts.batch
+      manager.delete_all_article_repositories config.hub_organization, edition, batch: global.batch
     else
-      manager.delete_article_repositories config.hub_organization, authors, edition, batch: opts.batch
+      manager.delete_article_repositories config.hub_organization, authors, edition, batch: global.batch
     end
   end
 end; end
