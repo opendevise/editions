@@ -1,12 +1,18 @@
-= Article Title
+= Article Title: Optional Subtitle
 {template_author_name}
+:slug: slugTitle
+ifndef::env-editions[]
+:codedir: code
 :imagesdir: images
+endif::[]
 
 [abstract]
 --
-Write the abstract here.
+Write one or more abstract paragraphs inside this open block.
 --
 
 == Section Title
 
 Write me.
+
+include::bio.adoc[]
