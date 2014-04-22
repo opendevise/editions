@@ -1,8 +1,4 @@
 require 'rugged'
-unless Rugged.respond_to? :features
-  def Rugged.features
-    []
-  end
-end
+class << Rugged; alias :features :capabilities; end unless Rugged.respond_to? :features
 require 'tmpdir'
 require_relative '../refined'
