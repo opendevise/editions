@@ -1,5 +1,5 @@
 require 'asciidoctor-epub3'
-desc 'Build the periodical into one or more formats'
+desc 'Build the periodical into one or more supported formats (e.g., epub3, kf8, pdf)'
 command :build do |cmd|; cmd.instance_eval do
   flag :p, :period,
     arg_name: '<date>',
@@ -32,6 +32,8 @@ command :build do |cmd|; cmd.instance_eval do
     to_dir = 'build'
     validate = opts.validate
     extract = opts.extract
+    # TODO auto-detect non-editor or add commandline flag
+    build_for = 'editor'
 
     pygments_attributes = (Gem::try_activate 'pygments.rb') ? ' source-highlighter=pygments pygments-css=style pygments-style=bw' : nil
 
@@ -41,7 +43,7 @@ command :build do |cmd|; cmd.instance_eval do
     formats.each do |format|
       Asciidoctor::Epub3::Converter.convert_file master_doc,
           ebook_format: format, safe: :safe, to_dir: to_dir, to_file: to_file, validate: validate, extract: extract,
-          attributes: %(listing-caption=Listing#{pygments_attributes} env-editions)
+          attributes: %(listing-caption=Listing#{pygments_attributes} buildfor-#{build_for} env-editions)
     end
   end
 end; end
