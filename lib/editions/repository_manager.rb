@@ -292,7 +292,7 @@ ifdef::backend-pdf[]
 :toclevels: 1
 :toc-title: Contents
 endif::[]
-//:front-cover-image: image:jacket/front-cover.jpg[Cover,1600,2056]
+//:front-cover-image: image:jacket/front-cover.jpg[Cover,1050,1600]
       EOS
 
       index = repo_clone.index
@@ -304,10 +304,12 @@ endif::[]
         master_doc_content = <<-EOS.chomp
 #{master_doc_content}
 
+ifdef::buildfor-editor,buildfor-#{article_repo.author.login}[]
 :codedir: #{article_repo_name}/code
 :imagesdir: #{article_repo_name}/images
 :idprefix: #{author_initials.downcase}_
 include::#{article_repo_name}/#{article_repo_name}.adoc[]
+endif::[]
         EOS
 
         ::Refined::Submodule.add repo_clone,
@@ -327,9 +329,17 @@ include::#{article_repo_name}/#{article_repo_name}.adoc[]
       ::File.open(::File.join(repo_clone.workdir, master_doc_filename), 'w') {|fd| fd.write master_doc_content }
       index.add path: master_doc_filename, oid: (::Rugged::Blob.from_workdir repo_clone, master_doc_filename), mode: 0100644
 
-      ::Dir.mkdir ::File.join(repo_clone.workdir, 'jacket')
-      ::File.open(::File.join(repo_clone.workdir, 'jacket/.gitkeep'), 'w') {|fd| fd.write '' }
-      index.add path: 'jacket/.gitkeep', oid: (::Rugged::Blob.from_workdir repo_clone, 'jacket/.gitkeep'), mode: 0100644
+      # TODO is there an API for managing gitignore we can use?
+      ::File.open(::File.join(repo_clone.workdir, '.gitignore'), 'w') {|fd| fd.write '/build/' }
+      index.add path: '.gitignore', oid: (::Rugged::Blob.from_workdir repo_clone, '.gitignore'), mode: 0100644
+
+      ::Dir.mkdir ::File.join(repo_clone.workdir, 'images')
+
+      ['avatars', 'jacket'].each do |folder|
+        ::Dir.mkdir ::File.join(repo_clone.workdir, %(images/#{folder}))
+        ::File.open(::File.join(repo_clone.workdir, %(images/#{folder}/.gitkeep)), 'w') {|fd| fd.write '' }
+        index.add path: %(images/#{folder}/.gitkeep), oid: (::Rugged::Blob.from_workdir repo_clone, %(images/#{folder}/.gitkeep)), mode: 0100644
+      end
 
       ::File.unlink(::File.join repo_clone.workdir, 'README.md')
       index.remove 'README.md'
