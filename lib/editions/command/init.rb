@@ -19,13 +19,12 @@ command :init do |cmd|; cmd.instance_eval do
 
   config_required
 
-  action do |global, opts, args|
+  action do |global, opts, args, config = global.config|
     if opts.authors.nil_or_empty?
       opts.authors = ask 'Enter the username of each author: ', ->(s) { s.split /(?:\s*,\s*|\s+)/ }
       help_now! 'you must specify at least one username' if opts.authors.empty?
     end
 
-    config = global.config
     hub = Editions::Hub.connect config, %w(repo)
     edition = Editions::Edition.new opts.edition, nil, opts.pubdate, (periodical = Editions::Periodical.from config)
     manager = Editions::RepositoryManager.new hub, config.git_name, config.git_email, config.repository_access

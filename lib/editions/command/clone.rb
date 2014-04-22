@@ -12,9 +12,7 @@ command :clone do |cmd|; cmd.instance_eval do
 
   config_required
 
-  action do |global, opts, args|
-    config = global.config
-
+  action do |global, opts, args, config = global.config|
     # QUESTION should we be more intelligent about how the working directory is built?
     edition_slug = global.profile ? %(#{global.profile}-#{opts.period}) : opts.period
     work_dir = File.expand_path(File.join opts.directory, edition_slug)

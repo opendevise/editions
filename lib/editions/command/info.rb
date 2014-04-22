@@ -1,8 +1,7 @@
 desc 'Print a summary of the environment'
 command :info do |cmd|; cmd.instance_eval do
   config_required
-  action do |global, opts, args|
-    config = global.config
+  action do |global, opts, args, config = global.config|
     color 'Profile: ', :bold
     say config.profile
     color 'Publication: ', :bold

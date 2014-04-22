@@ -7,8 +7,7 @@ command :console do |cmd|; cmd.instance_eval do
 
   config_required
 
-  action do |global, opts, args|
-    config = global.config
+  action do |global, opts, args, config = global.config|
     @hub = Editions::Hub.connect config
     @manager = Editions::RepositoryManager.new @hub, config.git_name, config.git_email, config.repository_access
     require 'irb'

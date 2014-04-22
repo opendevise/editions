@@ -24,7 +24,7 @@ class RepositoryManager
   end
 
   def create_contributor_team org, options = {}
-    @hub.create_team org, name: 'Contributors', permission: (options[:permission] || 'push')
+    @hub.create_team org, name: 'Contributors', permission: (options[:permission] || 'pull')
   end
 
   def create_article_repositories org, authors, edition, options = {}
