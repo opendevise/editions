@@ -1,3 +1,0 @@
-= {template_repository_name}
-
-{template_repository_desc}

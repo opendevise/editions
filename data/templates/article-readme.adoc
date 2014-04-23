@@ -1,0 +1,3 @@
+= {template-repository-name}
+
+{template-repository-desc}

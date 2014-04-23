@@ -1,10 +1,8 @@
 = Article Title: Optional Subtitle
-{template_author_name}
-:slug: slugTitle
-ifndef::env-editions[]
-:codedir: code
-:imagesdir: images
-endif::[]
+{template-author-name} <{template-author-email}>
+:slug: twoWords
+ifndef::codedir[:codedir: code]
+ifndef::imagesdir[:imagesdir: images]
 
 [abstract]
 --
