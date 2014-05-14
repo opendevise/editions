@@ -10,6 +10,10 @@ module GLI
     end
   end
 
+  module App
+    include CustomErrorSupport
+  end
+
   class GLIOptionParser
     # monkeypatch GLI::GLIOptionParser::GlobalOptionParser to provide more sane error reporting
     class GlobalOptionParser
@@ -26,5 +30,3 @@ module GLI
     end
   end
 end
-
-GLI::App.include GLI::CustomErrorSupport

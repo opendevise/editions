@@ -1,0 +1,22 @@
+= Publisher's Letter
+{template-publisher-name}
+:css-signature: publishers-letter
+:hide-uri-scheme:
+
+[.lead]
+Welcome to the {template-edition-month} edition of {template-publication-name}!
+
+This issue is chalk full of great articles for you to read and enjoy!
+A big thanks to our author contributors for this issue and all issues to date!
+
+[.signed]
+--
+Sincerely,
+
+{author}
+
+[.signature,subs=-macros]
+Publisher & Editor-in-Chief
+ifdef::email[{email}]
+{template-publication-url}
+--

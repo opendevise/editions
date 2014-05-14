@@ -1,8 +1,10 @@
 = Article Title: Optional Subtitle
 {template-author-name} <{template-author-email}>
 :slug: twoWords
+//:description: TODO
 ifndef::codedir[:codedir: code]
 ifndef::imagesdir[:imagesdir: images]
+:hide-uri-scheme:
 
 [abstract]
 --
@@ -13,4 +15,6 @@ Write one or more abstract paragraphs inside this open block.
 
 Write me.
 
-include::bio.adoc[]
+== About the Author
+
+include::{template-author-username}-bio.adoc[]

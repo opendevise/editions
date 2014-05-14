@@ -16,16 +16,20 @@ command :config do |cmd|; cmd.instance_eval do
     desc: 'the name of the periodical',
     required: true
 
+  flag :h, :handle,
+    arg_name: '"<string>"',
+    desc: 'an optional prefix used to name periodical resources'
+
   # TODO add more formal URL validation
-  flag :h, :homepage,
+  flag :H, :homepage,
     arg_name: '"<url>"',
     desc: 'the homepage URL of the periodical',
     required: true,
     must_match: /^https?:\/\/.*$/
 
-  flag :p, :producer,
+  flag :p, :publisher,
     arg_name: '"<name>"',
-    desc: 'the producer of the periodical',
+    desc: 'the publisher of the periodical',
     required: true
 
   switch :P, :private,
@@ -56,7 +60,7 @@ command :config do |cmd|; cmd.instance_eval do
     end
 
     # TODO verify we have proper authorization scopes
-    access_token_name = %(editions#{global.profile ? %[-#{global.profile}] : nil})
+    access_token_name = ['editions', global.profile].compact * '-'
     access_token = begin
       # NOTE if the request for authorization fails, assume the password is the token
       (hub.create_authorization \
@@ -81,26 +85,32 @@ Please navigate to Account Settings > Applications on GitHub and remove it.)
     #  raise GLI::CommandException.new 'username does match login of authentication token', self
     #end
 
+    pub_handle = opts.handle || global.profile
+    pub_handle = nil if pub_handle && pub_handle.empty?
+
     # TODO validate the org is an organization on GitHub
     config = {
       profile: (global.profile || 'default'),
-      hub_host: 'github',
+      hub_host: 'github.com',
       hub_username: username,
       hub_access_token: access_token,
       hub_netrc: opts.netrc,
       hub_organization: (opts.org || username),
-      repository_access: (opts.private ? :private : :public),
+      repository_access: (opts.private ? 'private' : 'public'),
       git_name: user_resource.name,
       git_email: ((email = user_resource.email).nil_or_empty? ? %(#{username}@users.noreply.github.com) : email),
       pub_name: opts.name,
+      pub_handle: pub_handle,
       pub_url: opts.homepage,
-      pub_producer: opts.producer
+      pub_publisher: opts.publisher
     }
 
     File.open global.conf_file, 'w', 0600 do |fd|
       fd.write config.to_yaml.lines.entries[1..-1].map {|ln| ln[1..-1] }.join
     end
     log 'wrote', global.conf_file
-    say %(To make this your default profile, run this export command in your terminal:\n\n export EDITIONS_PROFILE=#{global.profile}\n\n) if global.profile
+    if global.profile && global.profile != ENV['EDITIONS_PROFILE']
+      say %(To make this your default profile, run this export command in your terminal:\n\n export EDITIONS_PROFILE=#{global.profile}\n\n)
+    end
   end
 end; end

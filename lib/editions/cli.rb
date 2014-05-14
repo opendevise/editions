@@ -2,13 +2,14 @@ require 'gli'
 require_relative 'gli_ext'
 require 'highline/import'
 require 'commander/user_interaction'
-require 'yaml'
+require 'safe_yaml'
 
 autoload :Base64, 'base64'
 autoload :DateTime, 'date'
 autoload :FileUtils, 'fileutils'
 autoload :Open3, 'open3'
 autoload :Octokit, File.expand_path('autoload/octokit.rb', File.dirname(__FILE__))
+autoload :Refined, File.expand_path('autoload/rugged.rb', File.dirname(__FILE__))
 autoload :Rugged, File.expand_path('autoload/rugged.rb', File.dirname(__FILE__))
 
 include GLI::App
@@ -48,7 +49,7 @@ pre do |global, cmd, opts, args|
   conf_basename = global.profile ? %(.editions-#{global.profile}.yml) : '.editions.yml'
   # NOTE can't use global.config_file since it's a built-in function name in gli
   global.conf_file = conf_file = File.expand_path conf_basename, ENV['HOME']
-  global.config = OpenStruct.new(YAML.load_file conf_file) if File.exist? conf_file
+  global.config = OpenStruct.new(YAML.load_file conf_file, safe: true) if File.exist? conf_file
   if (cmd.respond_to? :config_required?) && cmd.config_required? && !global.config
     exit_now! %(#{global.profile || 'default'} profile does not exist\nPlease run '#{exe_name} config' to configure your environment.)
   end

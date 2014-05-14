@@ -35,11 +35,14 @@ A toolchain for publishing periodicals that are aggregated from articles stored 
   s.add_development_dependency 'rdoc', '~> 4.1.0'
   s.add_development_dependency 'aruba', '~> 0.5.4'
 
-  s.add_runtime_dependency 'gli', '~> 2.9.0'
-  s.add_runtime_dependency 'octokit', '~> 2.7.2'
-  s.add_runtime_dependency 'commander', '~> 4.1.6'
+  s.add_runtime_dependency 'gli', '~> 2.10.0'
+  s.add_runtime_dependency 'octokit', '~> 3.1.0'
+  s.add_runtime_dependency 'commander', '~> 4.2.0'
   s.add_runtime_dependency 'rugged', '~> 0.19.0'
+  s.add_runtime_dependency 'asciidoctor', '~> 1.5.0.preview.5'
   s.add_runtime_dependency 'asciidoctor-epub3', '~> 1.0.0.dev'
+  s.add_runtime_dependency 'nokogiri', '1.6.2'
+  s.add_runtime_dependency 'safe_yaml', '~> 1.0.3'
 
   # optional
   #s.add_runtime_dependency 'netrc', '0.7.7'

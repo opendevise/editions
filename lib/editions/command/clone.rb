@@ -6,53 +6,45 @@ command :clone do |cmd|; cmd.instance_eval do
     required: true,
     default_value: '.'
 
-  flag :p, :period,
-    arg_name: '<date>',
-    desc: %(The period of the issue (e.g., #{Time.now.strftime '%Y-%m'})),
+  flag :e, :edition,
+    arg_name: '<edition>',
+    desc: 'The volume and issue number of this edition (e.g., 5.1)',
     required: true,
-    default_value: (Time.now.strftime '%Y-%m')
+    # Editions::EditionNumber parses volume and issue number parts into an Array
+    type: Editions::EditionNumber,
+    must_match: Editions::EditionNumberRx
+
+  #flag :p, :pubdate,
+  #  arg_name: '<date>',
+  #  desc: %(The publication date of the edition to clone (e.g., #{current_month = Time.now.strftime '%Y-%m'})),
+  #  required: true,
+  #  default_value: current_month
 
   config_required
 
+  # QUESTION should we be more intelligent about how the working directory is built?
+  # TODO option to clone using ssh URL
   action do |global, opts, args, config = global.config|
-    # QUESTION should we be more intelligent about how the working directory is built?
-    edition_slug = global.profile ? %(#{global.profile}-#{opts.period}) : opts.period
+    hub = Editions::Hub.connect config
+    edition = Editions::Edition.new opts.edition, nil, nil, (periodical = Editions::Periodical.from config)
+    manager = Editions::RepositoryManager.new hub, config.git_name, config.git_email, config.repository_access
+    repo_qname = %(#{config.hub_organization}/#{repo_name = edition.handle})
+    spine_clone_url = manager.build_clone_url repo_qname
 
-    clone_url = %(https://#{config.hub_access_token}:x-oauth-basic@github.com/#{config.hub_organization}/#{edition_slug})
-    clone_dir = edition_slug
-    say %(Cloning repository #{config.hub_organization}/#{edition_slug} to #{clone_dir}...)
-    if Rugged.features.include? :https
-      Rugged::Repository.clone_at clone_url, clone_dir
-    else
-      Open3.popen3 %(git clone --recursive #{clone_url} #{clone_dir}) do |i, o, e, t|
-        t.value
+    # TODO warn if the target directory already exists
+    say %(Cloning repository #{repo_qname} to #{repo_name}...)
+
+    # TODO warn if repository cannot be cloned
+    Refined::Repository.clone_at spine_clone_url, repo_name
+
+    Dir.chdir repo_name do
+      # TODO warn gracefully if config.yaml is missing
+      OpenStruct.new(YAML.load_file 'config.yml', safe: true).articles
+        .map {|article| [(manager.inject_with_auth article['repository']['clone_url']), article['localDir']] }
+        .each do |article_clone_url, article_clone_dir|
+        # TODO warn if repository cannot be cloned
+        Refined::Repository.clone_at article_clone_url, article_clone_dir, recursive: true
       end
     end
-
-=begin
-    work_dir = File.expand_path(File.join opts.directory, edition_slug)
-    FileUtils.mkdir_p work_dir unless File.directory? work_dir
-    Dir.chdir work_dir
-
-    gh = Octokit::Client.new access_token: config.hub_access_token
-    gh.auto_paginate = true
-
-    repo_prefix = %(#{edition_slug}-)
-    # IMPORTANT repos method doesn't work here, must use org_repos method
-    gh.org_repos(config.hub_organization, type: config.repository_access).select {|repo| repo.name.start_with? repo_prefix }.each do |repo|
-      say %(Cloning repository #{repo.full_name} to #{File.join Dir.pwd, repo.name})
-      #log 'git clone', repo.full_name, (File.join Dir.pwd, repo.name)
-      clone_url = %(https://#{config.hub_username}:#{config.hub_access_token}@github.com/#{repo.full_name}.git)
-      clone_dir = repo.name
-      if Rugged.features.include? :https
-        Rugged::Repository.clone_at clone_url, clone_dir
-      else
-        Open3.popen3 %(git clone #{clone_url} #{clone_dir}) do |i, o, e, t|
-          t.value
-        end
-        Rugged::Repository.new clone_dir
-      end
-    end
-=end
   end
 end; end

@@ -1,9 +1,7 @@
 desc 'Starts a console in the context of the configured environment'
 command :console do |cmd|; cmd.instance_eval do
   # TODO would be nice if nodoc was a DSL method
-  def nodoc
-    true
-  end
+  def nodoc; true; end
 
   config_required
 

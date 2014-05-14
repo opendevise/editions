@@ -2,7 +2,7 @@ module Refined
 class Submodule
   class << self
     def add repository, path, url, oid, options = {}
-      File.open File.join(repository.workdir, '.gitmodules'), 'a+' do |fd|
+      ::File.open ::File.join(repository.workdir, '.gitmodules'), 'a+' do |fd|
         fd.read # make sure we're at the end of the file
         fd.write "\n\n" unless fd.pos == 0 
         fd.write %([submodule "#{path}"]

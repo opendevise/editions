@@ -9,5 +9,7 @@ module GLI
     end
   end
 
-  Command.include CommandConfigDSL
+  class Command
+    include CommandConfigDSL
+  end
 end
