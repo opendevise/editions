@@ -79,7 +79,7 @@ class RepositoryManager
     author_resource.initials = author_name.gsub InitialsRx, '\k<initial>'
     repo_name = [edition.handle, author] * '-'
     repo_qname = [org, repo_name] * '/'
-    repo_desc = '%s\'s %s article for %s' % [author_name, edition.month_formatted, edition.periodical.name]
+    repo_desc = '%s\'s %s article for %s' % [author_name, edition.month_formatted, edition.publication.name]
     begin
       repo = @hub.repo repo_qname
       say_warning %(The repository #{repo_qname} for #{author_name} already exists.)
@@ -89,7 +89,7 @@ class RepositoryManager
     return unless options[:batch] || (agree %(Create the #{colorize @repository_access.to_s, :underline} repository #{colorize repo_qname, :bold} for #{colorize author_name, :bold}? [y/n] ))
     repo = @hub.create_repo repo_name,
       organization: org,
-      homepage: edition.periodical.url,
+      homepage: edition.publication.url,
       description: repo_desc,
       has_wiki: false,
       has_issues: false,
@@ -105,8 +105,8 @@ class RepositoryManager
     repo_name = repo.name
     repo_qname = repo.full_name
     org = repo.organization.login
-    assets_repo_qname = [org, [edition.periodical.handle, 'assets'].compact * '-'] * '/'
-    docs_repo_qname = [org, [edition.periodical.handle, 'docs'].compact * '-'] * '/'
+    assets_repo_qname = [org, [edition.publication.handle, 'assets'].compact * '-'] * '/'
+    docs_repo_qname = [org, [edition.publication.handle, 'docs'].compact * '-'] * '/'
     last_commit_sha = nil
 
     ::Dir.mktmpdir 'rugged-' do |clone_dir|
@@ -261,7 +261,7 @@ class RepositoryManager
   def create_master_repository org, edition, options = {}
     repo_name = edition.handle
     repo_qname = [org, repo_name] * '/'
-    repo_desc = 'The %s Edition of %s' % [edition.month_formatted, edition.periodical.name]
+    repo_desc = 'The %s Edition of %s' % [edition.month_formatted, edition.publication.name]
 
     begin
       repo = @hub.repo repo_qname
@@ -272,7 +272,7 @@ class RepositoryManager
 
     repo = @hub.create_repo repo_name,
       organization: org,
-      homepage: edition.periodical.url,
+      homepage: edition.publication.url,
       description: repo_desc,
       has_wiki: false,
       has_issues: false,
@@ -290,7 +290,7 @@ class RepositoryManager
   def seed_master_repository repo, article_repos, edition, options = {}
     repo_name = repo.name
     repo_qname = repo.full_name
-    assets_repo_qname = [repo.organization.login, [edition.periodical.handle, 'assets'].compact * '-'] * '/'
+    assets_repo_qname = [repo.organization.login, [edition.publication.handle, 'assets'].compact * '-'] * '/'
     spine_doc_filename = %(#{repo_name}.adoc)
     spine_config_filename = 'config.yml'
     ::Dir.mktmpdir 'rugged-' do |clone_dir|
@@ -307,14 +307,13 @@ class RepositoryManager
 #{author_names * '; '}
 v#{edition.number}, #{edition.pub_date.strftime '%Y-%m-%d'}
 :doctype: book
-:publisher: #{edition.periodical.publisher}
-:app-name: #{edition.periodical.name}
-//:subject: TODO
-//:keywords: TODO
+:publisher: #{edition.publication.publisher}
+:app-name: #{edition.publication.name}
+//:subject: Subject 1, Subject 2, ...
 :description: #{edition.description.sub ': ', ": +\n"}
-:pub-handle: #{edition.periodical.handle}
+:pub-handle: #{edition.publication.handle}
 :pub-date: #{edition.year_month}
-:pub-url: #{edition.periodical.url}
+:pub-url: #{edition.publication.url}
 :edition: {revnumber}
 :edition-handle: #{edition.handle}
 :volume: #{edition.volume}
@@ -341,9 +340,10 @@ endif::[]
       EOS
 
       spine_config = {
-        'edition' => edition.number,
-        'publicationDate' => edition.year_month,
-        'buildDir' => 'build',
+        'edition_number' => edition.number,
+        'edition_handle' => edition.handle,
+        'edition_pub_date' => edition.year_month,
+        'build_dir' => 'build',
         'articles' => []
       }
 
@@ -369,7 +369,7 @@ endif::[]
 
         spine_config['articles'] << {
           'username' => author_username,
-          'localDir' => article_repo_name,
+          'local_dir' => article_repo_name,
           'repository' => {
             'clone_url' => article_repo.clone_url,
             'ssh_url' => article_repo.ssh_url
@@ -393,8 +393,8 @@ endif::[]
 
       template_vars = {
         'publisher-name' => edition.publisher,
-        'publication-name' => edition.periodical.name,
-        'publication-url' => edition.periodical.url,
+        'publication-name' => edition.publication.name,
+        'publication-url' => edition.publication.url,
         'edition-month' => edition.month_formatted
       }
 
@@ -435,7 +435,7 @@ endif::[]
 
       # TODO move to a method
       begin
-        assets_repo = [repo.organization.login, [edition.periodical.handle, 'assets'].compact * '-'] * '/'
+        assets_repo = [repo.organization.login, [edition.publication.handle, 'assets'].compact * '-'] * '/'
 
         epub3_css_filename = ::File.join 'styles', 'epub3.css'
         epub3_css_content = ::Base64.decode64 (@hub.contents assets_repo, path: epub3_css_filename).content

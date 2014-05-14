@@ -19,13 +19,13 @@ class Edition
   attr_reader :issue_num
   attr_accessor :title
   attr_accessor :pub_date
-  attr_accessor :periodical
+  attr_accessor :publication
   attr_reader :month
   attr_reader :month_formatted
-  def_delegator :@periodical, :publisher
-  #def_delegator :@periodical, :name, :publication_name
+  def_delegator :@publication, :publisher
+  #def_delegator :@publication, :name, :publication_name
 
-  def initialize vol_num, issue_num, pub_date, periodical = nil, title = nil
+  def initialize vol_num, issue_num, pub_date, publication = nil, title = nil
     if vol_num.is_a? Array
       @vol_num = %(#{vol_num[0]})
       @issue_num = %(#{vol_num[1]})
@@ -43,7 +43,7 @@ class Edition
     @pub_date = pub_date
     @month = pub_date.strftime '%Y-%m' if pub_date
     @month_formatted = pub_date.strftime '%B %Y' if pub_date
-    @periodical = periodical
+    @publication = publication
     @title = title
   end
 
@@ -52,20 +52,20 @@ class Edition
   end
 
   def handle
-    raise ArgumentError, 'Cannot determine handle for edition, periodical not defined' unless @periodical
-    #[@periodical.handle, year_month].compact * '-'
-    [@periodical.handle, number].compact * '-v'
+    raise ArgumentError, 'Cannot determine handle for edition, publication not defined' unless @publication
+    #[@publication.handle, year_month].compact * '-'
+    [@publication.handle, number].compact * '-v'
   end
 
   def full_title
-    raise ArgumentError, 'Cannot determine full_title for edition, periodical not defined' unless @periodical
-    @title ? %(#{@periodical.name} - #{month_formatted}: #{@title}) : %(#{@periodical.name} - #{month_formatted})
+    raise ArgumentError, 'Cannot determine full_title for edition, publication not defined' unless @publication
+    @title ? %(#{@publication.name} - #{month_formatted}: #{@title}) : %(#{@publication.name} - #{month_formatted})
   end
 
   def description
-    raise ArgumentError, 'Cannot determine description for edition, periodical not defined' unless @periodical
-    edition_formatted = '%s Edition of %s' % [month_formatted, @periodical.name]
-    @periodical.description ? %(#{edition_formatted}: #{@periodical.description.tr_s "\n", ' '}) : edition_formatted
+    raise ArgumentError, 'Cannot determine description for edition, publication not defined' unless @publication
+    edition_formatted = '%s Edition of %s' % [month_formatted, @publication.name]
+    @publication.description ? %(#{edition_formatted}: #{@publication.description.tr_s "\n", ' '}) : edition_formatted
   end
 
   alias :volume :vol_num

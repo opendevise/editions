@@ -32,10 +32,10 @@ command :init do |cmd|; cmd.instance_eval do
     end
 
     hub = Editions::Hub.connect config, %w(repo)
-    edition = Editions::Edition.new opts.edition, nil, opts.pubdate, (periodical = Editions::Periodical.from config), opts.title
+    edition = Editions::Edition.new opts.edition, nil, opts.pubdate, (publication = Editions::Publication.from config), opts.title
     manager = Editions::RepositoryManager.new hub, config.git_name, config.git_email, config.repository_access
     manager.create_repositories_for_edition config.hub_organization, edition, opts.authors, batch: global.batch
-    say hub.say 'The %s edition of %s is underway!' % [edition.month_formatted, periodical.name]
+    say hub.say 'The %s edition of %s is underway!' % [edition.month_formatted, publication.name]
   end
 end; end
 

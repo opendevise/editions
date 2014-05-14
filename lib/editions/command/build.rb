@@ -1,14 +1,11 @@
 require 'asciidoctor-epub3'
 require 'asciidoctor/extensions'
 
-desc 'Build the periodical into one or more supported formats (e.g., epub3, kf8, pdf)'
+desc 'Build the publication into one or more of the supported formats (e.g., epub3, kf8, pdf)'
 command :build do |cmd|; cmd.instance_eval do
-  flag :e, :edition,
-    arg_name: '<edition>',
-    desc: 'The volume and issue number of this edition (e.g., 5.1)',
-    # Editions::EditionNumber parses volume and issue number parts into an Array
-    type: Editions::EditionNumber,
-    must_match: Editions::EditionNumberRx
+  flag :f, :for,
+    arg_name: '<login>',
+    desc: 'Selectively build for the specified author (identified by login) (e.g., octocat)'
 
   switch :V, :validate,
     desc: 'Perform validation (currently only applies to epub3 format)',
@@ -20,22 +17,18 @@ command :build do |cmd|; cmd.instance_eval do
     negatable: false,
     default_value: false
 
-  config_required
-
   action do |global, opts, args, config = global.config|
     edition_config = if File.exist? 'config.yml'
       OpenStruct.new (YAML.load_file 'config.yml', safe: true)
     else
-      OpenStruct.new 
+      help_now! 'Could not locate edition to build. Are you in the directory of the edition you want to build?'
     end
 
-    unless (edition_number = edition_config.edition || opts.edition)
-      help_now! 'Could not determine the edition number. Are you sure you\'re in a directory containing the edition to build?'
-    end
+    #edition = Editions::Edition.new edition_number, nil, nil, (Editions::Publication.from config)
+    #edition_handle = edition.handle
+    edition_handle = edition_config.edition_handle
 
-    edition = Editions::Edition.new edition_number, nil, nil, (periodical = Editions::Periodical.from config)
-
-    unless File.exist? (spine_doc = %(#{edition.handle}.adoc))
+    unless File.exist? (spine_doc = %(#{edition_handle}.adoc))
       help_now! %(Could not find spine document: #{spine_doc})
     end
 
@@ -49,17 +42,17 @@ command :build do |cmd|; cmd.instance_eval do
       ::FileUtils.cp 'publisher-headshot.jpg', %(images/headshots/publisher.jpg)
     end
     edition_config.articles.each do |article|
-      if ::File.readable? (avatar = %(#{article['localDir']}/avatar.jpg))
+      if ::File.readable? (avatar = %(#{article['local_dir']}/avatar.jpg))
         ::FileUtils.cp avatar, %(images/avatars/#{article['username']}.jpg)
       else
-        ::Dir[%(#{article['localDir']}/*-avatar.jpg)].each do |avatar|
+        ::Dir[%(#{article['local_dir']}/*-avatar.jpg)].each do |avatar|
           ::FileUtils.cp avatar, %(images/avatars/#{(::File.basename avatar).sub '-avatar', ''})
         end
       end
-      if ::File.readable? (headshot = %(#{article['localDir']}/headshot.jpg))
+      if ::File.readable? (headshot = %(#{article['local_dir']}/headshot.jpg))
         ::FileUtils.cp headshot, %(images/headshots/#{article['username']}.jpg)
       else
-        ::Dir[%(#{article['localDir']}/*-headshot.jpg)].each do |headshot|
+        ::Dir[%(#{article['local_dir']}/*-headshot.jpg)].each do |headshot|
           ::FileUtils.cp headshot, %(images/headshots/#{(::File.basename headshot).sub '-headshot', ''})
         end
       end
@@ -69,11 +62,11 @@ command :build do |cmd|; cmd.instance_eval do
     formats = ((args[0] || 'epub3,kf8').split ',') & ['epub3', 'kf8', 'pdf']
 
     to_file = nil
-    to_dir = edition_config.buildDir || 'build'
+    to_dir = edition_config.build_dir || 'build'
     validate = opts.validate
     extract = opts.extract
-    # TODO auto-detect non-editor or add commandline flag
-    build_for = 'editor'
+    # TODO auto-detect non-editor (how?)
+    build_for = opts.for || 'editor'
 
     pygments_attributes = (Gem::try_activate 'pygments.rb') ? ' source-highlighter=pygments pygments-css=style pygments-style=bw' : nil
     styles_attribute = (::File.exist? 'styles/epub3.css') ? ' epub3-stylesdir=styles' : nil
@@ -99,7 +92,7 @@ command :build do |cmd|; cmd.instance_eval do
     formats.each do |format|
       Asciidoctor::Epub3::Converter.convert_file spine_doc,
           ebook_format: format, safe: :safe, to_dir: to_dir, to_file: to_file, validate: validate, extract: extract,
-          attributes: %(listing-caption=Listing buildfor-#{build_for} builder=editions builder-editions#{styles_attribute}#{pygments_attributes})
+          attributes: %(listing-caption=Listing buildfor=#{build_for} buildfor-#{build_for} builder=editions builder-editions#{styles_attribute}#{pygments_attributes})
     end
   end
 end; end

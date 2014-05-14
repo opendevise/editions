@@ -1,7 +1,9 @@
 = Article Title: Optional Subtitle
 {template-author-name} <{template-author-email}>
-:slug: twoWords
-//:description: TODO
+:css-signature: {template-repository-name}
+//:hashtag: CamelCase
+//:keywords: keyword_1, keyword_2, ...
+//:description: WRITE ME!
 ifndef::codedir[:codedir: code]
 ifndef::imagesdir[:imagesdir: images]
 :hide-uri-scheme:

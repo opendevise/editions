@@ -20,7 +20,7 @@ def colorize *args
   $terminal.color(*args)
 end
 
-program_desc 'publish periodicals from articles composed in AsciiDoc'
+program_desc 'create and publish editions of a publication from articles composed in AsciiDoc'
 version Editions::VERSION
 
 # GLI config
@@ -37,7 +37,7 @@ end
 # Global arguments
 flag :P, :profile,
   arg_name: '<name>',
-  desc: 'Run using the specified configuration profile. (Also used as the prefix for this periodical\'s resources).',
+  desc: 'Run using the specified configuration profile. (Also used as the prefix for this publication\'s resources).',
   default_value: ENV['EDITIONS_PROFILE']
 
 switch :y, :batch,

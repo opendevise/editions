@@ -2,38 +2,38 @@ desc 'Prepare your environment for using editions'
 command :config do |cmd|; cmd.instance_eval do
   flag :u, :username,
     arg_name: '<login>',
-    desc: 'the GitHub username (i.e., login) of the periodical\'s administrator',
+    desc: 'the GitHub username (i.e., login) of the publication\'s administrator',
     required: true
 
   flag :o, :org,
     arg_name: '<login>',
-    #desc: 'the GitHub organization for this periodical (defaults to the <username>)'
-    desc: 'the GitHub organization for this periodical',
+    #desc: 'the GitHub organization for this publication (defaults to the <username>)'
+    desc: 'the GitHub organization for this publication',
     required: true
 
   flag :n, :name,
     arg_name: '"<text>"',
-    desc: 'the name of the periodical',
+    desc: 'the name of the publication',
     required: true
 
   flag :h, :handle,
     arg_name: '"<string>"',
-    desc: 'an optional prefix used to name periodical resources'
+    desc: 'an optional prefix used to name publication resources'
 
   # TODO add more formal URL validation
   flag :H, :homepage,
     arg_name: '"<url>"',
-    desc: 'the homepage URL of the periodical',
+    desc: 'the homepage URL of the publication',
     required: true,
     must_match: /^https?:\/\/.*$/
 
   flag :p, :publisher,
     arg_name: '"<name>"',
-    desc: 'the publisher of the periodical',
+    desc: 'the name of the publisher',
     required: true
 
   switch :P, :private,
-    desc: 'Use private repositories on GitHub',
+    desc: 'use private repositories on GitHub',
     negatable: false,
     default_value: false
 

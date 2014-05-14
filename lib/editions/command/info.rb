@@ -2,7 +2,7 @@ desc 'Print a summary of the environment'
 command :info do |cmd|; cmd.instance_eval do
   config_required
   action do |global, opts, args, config = global.config|
-    edition = Editions::Edition.new '1.3', nil, nil, (periodical = Editions::Periodical.from config)
+    edition = Editions::Edition.new '1.3', nil, nil, (Editions::Publication.from config)
     color 'Profile: ', :bold
     say config.profile
     color 'Publication: ', :bold

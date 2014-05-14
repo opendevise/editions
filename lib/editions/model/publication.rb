@@ -1,8 +1,8 @@
 module Editions
-class Periodical
+class Publication
   class << self
     def from config
-      Periodical.new config.pub_name, config.pub_handle, config.pub_url, config.pub_publisher, config.pub_description
+      Publication.new config.pub_name, config.pub_handle, config.pub_url, config.pub_publisher, config.pub_description
     end
   end
 
