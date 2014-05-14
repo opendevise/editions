@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
 require_relative '../lib/editions'
-require_relative '../lib/editions/cli'
+require 'editions/cli'
 
 exit run ARGV

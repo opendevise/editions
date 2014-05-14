@@ -1,5 +1,8 @@
 module Editions
-  DATADIR = File.join File.dirname(File.dirname __FILE__), 'data'
+  LIBDIR = File.expand_path '..', __FILE__
+  $:.delete LIBDIR
+  $:.unshift LIBDIR
+  DATADIR = File.join (File.dirname LIBDIR), 'data'
 end
 require_relative 'editions/version'
 require_relative 'editions/core_ext'
