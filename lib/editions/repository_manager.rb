@@ -1,6 +1,7 @@
 module Editions
+# TODO reorder methods into a more logical order
 class RepositoryManager
-  # TODO make this logic more robust
+  # TODO make the initials logic more robust
   InitialsRx = /(?:^|\s)(?<initial>[A-Z])[^\s]*/
 
   # QUESTION make batch mode a field? read git_name, git_email and repository_access from config param?
@@ -53,24 +54,29 @@ class RepositoryManager
     author_editor_team = contributor_team org, auto_create: true
     edition_team = contributor_team org, name: edition.handle, permission: 'push', auto_create: true
 
-    article_repos = authors.map do |author|
-      # FIXME handle case the repository already exists
+    article_repos = authors.map{|author|
       if (article_repo = create_article_repository org, edition, author, options)
-        article_repo.last_commit_sha = seed_article_repository article_repo, edition, options
+        seed_article_repository article_repo, edition, options unless article_repo.seeded
+        # Add author to authors & editors team (read-only)
         @hub.add_team_member author_editor_team.id, author
         @hub.add_team_repo author_editor_team.id, article_repo.full_name
+        # Add author to team for this edition (read-write)
         @hub.add_team_member edition_team.id, author
         @hub.add_team_repo edition_team.id, article_repo.full_name
       end
       article_repo
-    end.compact
+    }
 
-    if (master_repo = create_master_repository org, edition, options)
-      seed_master_repository master_repo, article_repos, edition, options
-      @hub.add_team_repo author_editor_team.id, master_repo.full_name
-      @hub.add_team_repo edition_team.id, master_repo.full_name
+    if (spine_repo = create_spine_repository org, edition, options)
+      if spine_repo.seeded
+        update_spine_repository spine_repo, article_repos, edition, options
+      else
+        seed_spine_repository spine_repo, article_repos, edition, options
+      end
+      @hub.add_team_repo author_editor_team.id, spine_repo.full_name
+      @hub.add_team_repo edition_team.id, spine_repo.full_name
     end
-    ([master_repo] + article_repos).compact
+    ([spine_repo] + article_repos).compact
   end
 
   def create_article_repository org, edition, author, options = {}
@@ -84,6 +90,7 @@ class RepositoryManager
       repo = @hub.repo repo_qname
       say_warning %(The repository #{repo_qname} for #{author_name} already exists.)
       repo.author = author_resource
+      repo.seeded = true
       return repo
     rescue; end
     return unless options[:batch] || (agree %(Create the #{colorize @repository_access.to_s, :underline} repository #{colorize repo_qname, :bold} for #{colorize author_name, :bold}? [y/n] ))
@@ -98,6 +105,7 @@ class RepositoryManager
       auto_init: true
     say_ok %(Successfully created the repository #{repo_qname})
     repo.author = author_resource
+    repo.seeded = false
     repo
   end
 
@@ -142,20 +150,20 @@ class RepositoryManager
         'draft-deadline' => (edition.pub_date.strftime '%B 15, %Y')
       }
 
-      profile_assets = ['bio.adoc', 'avatar.jpg', 'headshot.jpg'].map do |asset_name|
+      profile_assets = ['bio.adoc', 'avatar.jpg', 'headshot.jpg'].map {|asset_name|
         asset_qname = %(#{author_username}-#{asset_name})
-        if contents? assets_repo_qname, (asset_path = %(profiles/#{author_username}/#{asset_name}))
-          [asset_qname, (::Base64.decode64 (@hub.contents assets_repo_qname, path: asset_path).content)]
-        elsif asset_name == 'bio.adoc'
-          [asset_qname, (template_contents assets_repo_qname, 'seed-bio.adoc', template_vars)]
+        if asset_name == 'bio.adoc'
+          [asset_qname, (template_content assets_repo_qname, 'seed-bio.adoc', template_vars)]
+        elsif asset? assets_repo_qname, (asset_path = %(profiles/#{author_username}/#{asset_name}))
+          [asset_qname, (asset_content assets_repo_qname, asset_path)]
         else
           [asset_qname, nil]
         end
-      end.to_h
+      }.to_h
 
       seed_files = {
-        'README.adoc'        => (template_contents assets_repo_qname, 'article-readme.adoc', template_vars),
-        'article.adoc'       => (template_contents assets_repo_qname, 'seed-article.adoc', template_vars),
+        'README.adoc'        => (template_content assets_repo_qname, 'article-readme.adoc', template_vars),
+        'article.adoc'       => (template_content assets_repo_qname, 'seed-article.adoc', template_vars),
         # TODO is there an API for managing gitignore we can use?
         '.gitignore'         => %w(/*.html).join("\n"),
         'code/.gitkeep'      => '',
@@ -164,11 +172,11 @@ class RepositoryManager
 
       index = repo_clone.index
 
+      # TODO make a helper for creating files & adding to git index
       seed_files.each do |filename, contents|
         if contents
-          # TODO make a helper for creating files & adding to git index
           ::FileUtils.mkdir_p (::File.join repo_clone.workdir, (::File.dirname filename)) if filename.include? '/'
-          ::File.open((::File.join repo_clone.workdir, filename), 'w') {|fd| fd.write contents }
+          ::File.open((::File.join repo_clone.workdir, filename), 'wb') {|fd| fd.write contents }
           index.add path: filename, oid: (::Rugged::Blob.from_workdir repo_clone, filename), mode: 0100644
         end
       end
@@ -180,7 +188,7 @@ class RepositoryManager
         ::Refined::Submodule.add repo_clone,
           'docs',
           %(#{submodule_repository_root}#{docs_repo_qname}.git),
-          # TODO cache this info
+          # TODO cache the last commit sha of the docs repository
           (@hub.branch docs_repo_qname, 'master').commit.sha,
           index: index
       rescue
@@ -206,6 +214,7 @@ class RepositoryManager
       unless (last_commit_sha = repo_clone.head.target).is_a? ::String
         last_commit_sha = repo_clone.head.target_id
       end
+      repo.seeded = true    
     end
     last_commit_sha
   end
@@ -216,6 +225,7 @@ class RepositoryManager
     end
   end
 
+  # TODO remove repository from config.yml in spine repository
   def delete_article_repository org, author, edition, options = {}
     repo_name = [edition.handle, author] * '-'
     repo_qname = [org, repo_name] * '/'
@@ -258,17 +268,18 @@ class RepositoryManager
     @hub.auto_paginate = previous_auto_paginate
   end
 
-  def create_master_repository org, edition, options = {}
+  def create_spine_repository org, edition, options = {}
     repo_name = edition.handle
     repo_qname = [org, repo_name] * '/'
     repo_desc = 'The %s Edition of %s' % [edition.month_formatted, edition.publication.name]
 
     begin
       repo = @hub.repo repo_qname
-      say_warning %(The master repository #{repo_qname} already exists)
+      say_warning %(The spine repository #{repo_qname} already exists.)
+      repo.seeded = true
       return repo
     rescue; end
-    return unless options[:batch] || (agree %(Create the #{colorize @repository_access.to_s, :underline} master repository #{colorize repo_qname, :bold}? [y/n] ))
+    return unless options[:batch] || (agree %(Create the #{colorize @repository_access.to_s, :underline} spine repository #{colorize repo_qname, :bold}? [y/n] ))
 
     repo = @hub.create_repo repo_name,
       organization: org,
@@ -280,14 +291,89 @@ class RepositoryManager
       private: (@repository_access == :private),
       auto_init: true
     say_ok %(Successfully created the repository #{repo_qname})
+    repo.seeded = false
     repo
   end
 
-  #--
-  # TODO stub publisher's letter
-  # NOTE update submodules using
-  # $ git submodule foreach git pull origin master
-  def seed_master_repository repo, article_repos, edition, options = {}
+  # Update the configuration file in the spine repository to include only the
+  # provided list of article repositories.
+  def update_spine_repository repo, article_repos, edition, options = {}
+    repo_name = repo.name
+    repo_qname = repo.full_name
+    spine_doc_filename = %(#{repo_name}.adoc)
+    spine_config_filename = 'config.yml'
+    ::Dir.mktmpdir 'rugged-' do |clone_dir|
+      repo_clone = try_try_again limit: 3, wait: 1, message: 'Repository not yet available. Retrying in 1s...' do
+        # TODO perhaps only use the access token when calling push?
+        ::Refined::Repository.clone_at (build_clone_url repo_qname), clone_dir
+      end
+
+      spine_config = {
+        'edition_number' => edition.number,
+        'edition_handle' => edition.handle,
+        'edition_pub_date' => edition.year_month,
+        'build_dir' => 'build',
+        'articles' => article_repos.map {|article_repo|
+          {
+            'username' => article_repo.author.login,
+            'local_dir' => article_repo.name,
+            'repository' => {
+              'clone_url' => article_repo.clone_url,
+              'ssh_url' => article_repo.ssh_url
+            }
+          }
+        }
+      }
+
+      spine_doc_content = [(::File.read (::File.join repo_clone.workdir, spine_doc_filename))
+          .gsub(/^ifdef::buildfor-editor,buildfor-.*/m, '').rstrip]
+          .concat(article_repos.map {|article_repo|
+            author = article_repo.author
+            article_repo_vname = article_repo.name
+                .gsub(edition.handle, '{edition-handle}')
+                .gsub(author.login, '{username}')
+            %(ifdef::buildfor-editor,buildfor-#{author.login}[]
+:username: #{author.login}
+:idprefix: #{author.initials.downcase}_
+:articledir: #{article_repo_vname}
+:imagesdir: #{article_repo.name}/images
+include::{articledir}/article.adoc[]
+endif::[])
+      }) * "\n\n"
+
+      seed_files = {
+        spine_doc_filename => spine_doc_content,
+        spine_config_filename => spine_config.to_yaml.sub(/\A---\n/, '')
+      }
+
+      index = repo_clone.index
+
+      # FIXME make a helper for creating files & adding to git index
+      seed_files.each do |filename, contents|
+        if contents
+          ::FileUtils.mkdir_p (::File.join repo_clone.workdir, (::File.dirname filename)) if filename.include? '/'
+          ::File.open((::File.join repo_clone.workdir, filename), 'wb') {|fd| fd.write contents }
+          index.add path: filename, oid: (::Rugged::Blob.from_workdir repo_clone, filename), mode: 0100644
+        end
+      end
+
+      commit_tree = index.write_tree repo_clone
+      index.write
+
+      commit_author = { name: @git_name, email: @git_email, time: ::Time.now }
+      ::Rugged::Commit.create repo_clone,
+        author: commit_author,
+        committer: commit_author,
+        message: 'Update spine document and configuration file',
+        parents: [repo_clone.head.target],
+        tree: commit_tree,
+        update_ref: 'HEAD'
+
+      ::Refined::Repository.push repo_clone
+    end
+  end
+
+  def seed_spine_repository repo, article_repos, edition, options = {}
     repo_name = repo.name
     repo_qname = repo.full_name
     assets_repo_qname = [repo.organization.login, [edition.publication.handle, 'assets'].compact * '-'] * '/'
@@ -375,21 +461,7 @@ endif::[]
             'ssh_url' => article_repo.ssh_url
           }
         }
-
-        #::Refined::Submodule.add repo_clone,
-        #  article_repo_name,
-        #  %(#{submodule_repository_root}#{article_repo_qname}.git),
-        #  article_repo.last_commit_sha,
-        #  index: index
       end
-
-      # FIXME reset images after parse so this assignment isn't required
-      spine_doc_content = <<-EOS.chomp
-#{spine_doc_content}
-
-// FIXME converters should restore attributes after parsing/rendering
-:imagesdir: images
-      EOS
 
       template_vars = {
         'publisher-name' => edition.publisher,
@@ -398,20 +470,20 @@ endif::[]
         'edition-month' => edition.month_formatted
       }
 
-      publisher_profile_assets = ['avatar.jpg', 'headshot.jpg'].map do |asset_name|
+      publisher_profile_assets = ['avatar.jpg', 'headshot.jpg'].map {|asset_name|
         asset_qname = %(publisher-#{asset_name})
-        if contents? assets_repo_qname, (asset_path = %(profiles/publisher/#{asset_name}))
-          [asset_qname, (::Base64.decode64 (@hub.contents assets_repo_qname, path: asset_path).content)]
+        if asset? assets_repo_qname, (asset_path = %(profiles/publisher/#{asset_name}))
+          [asset_qname, (asset_content assets_repo_qname, asset_path)]
         else
           [asset_qname, nil]
         end
-      end.to_h
+      }.to_h
 
-      insert_assets = begin
-        (@hub.contents assets_repo_qname, path: 'inserts').map do |asset|
-          [%(images/inserts/#{asset.name}), (::Base64.decode64 (@hub.contents assets_repo_qname, path: asset.path).content)]
-        end.to_h
-      rescue ::Octokit::NotFound
+      insert_assets = if asset? assets_repo_qname, 'inserts'
+        (asset_content assets_repo_qname, 'inserts').map {|asset_path|
+          [%(images/#{asset_qpath = ::File.join 'inserts', asset_path}), (asset_content assets_repo_qname, asset_qpath)]
+        }.to_h
+      else
         { 'images/inserts/.gitkeep' => '' }
       end
 
@@ -420,38 +492,29 @@ endif::[]
         spine_config_filename     => spine_config.to_yaml.sub(/\A---\n/, ''),
         # TODO is there an API for managing gitignore we can use?
         '.gitignore'              => %W(/build/ /#{repo_name}-*/ /images/avatars/ /images/headshots/ /*.html /*.pdf*).join("\n"),
-        'publishers-letter.adoc'  => (template_contents assets_repo_qname, 'seed-publishers-letter.adoc', template_vars),
+        'publishers-letter.adoc'  => (template_content assets_repo_qname, 'seed-publishers-letter.adoc', template_vars),
         'images/jacket/.gitkeep'  => ''
-      }.merge(publisher_profile_assets).merge(insert_assets)
+      }.merge(publisher_profile_assets).merge insert_assets
 
       seed_files.each do |filename, contents|
         if contents
           # TODO make a helper for creating files & adding to git index
           ::FileUtils.mkdir_p (::File.join repo_clone.workdir, (::File.dirname filename)) if filename.include? '/'
-          ::File.open((::File.join repo_clone.workdir, filename), 'w') {|fd| fd.write contents }
+          ::File.open((::File.join repo_clone.workdir, filename), 'wb') {|fd| fd.write contents }
           index.add path: filename, oid: (::Rugged::Blob.from_workdir repo_clone, filename), mode: 0100644
         end
       end
 
-      # TODO move to a method
-      begin
-        assets_repo = [repo.organization.login, [edition.publication.handle, 'assets'].compact * '-'] * '/'
-
-        epub3_css_filename = ::File.join 'styles', 'epub3.css'
-        epub3_css_content = ::Base64.decode64 (@hub.contents assets_repo, path: epub3_css_filename).content
-
-        epub3_css3_filename = ::File.join 'styles', 'epub3-css3-only.css'
-        epub3_css3_content = ::Base64.decode64 (@hub.contents assets_repo, path: epub3_css3_filename).content
-
+      if asset? assets_repo_qname, 'styles'
         ::Dir.mkdir (::File.join repo_clone.workdir, 'styles')
 
-        ::File.open((::File.join repo_clone.workdir, epub3_css_filename), 'w') {|fd| fd.write epub3_css_content }
-        index.add path: epub3_css_filename, oid: (::Rugged::Blob.from_workdir repo_clone, epub3_css_filename), mode: 0100644
-
-        ::File.open((::File.join repo_clone.workdir, epub3_css3_filename), 'w') {|fd| fd.write epub3_css3_content }
-        index.add path: epub3_css3_filename, oid: (::Rugged::Blob.from_workdir repo_clone, epub3_css3_filename), mode: 0100644
-      rescue ::Octokit::NotFound
-        # ignore
+        ['epub3.css', 'epub3-css3-only.css', 'pdf.yml'].each do |style_asset_name|
+          if asset? assets_repo_qname, (style_asset_path = ::File.join 'styles', style_asset_name)
+            style_asset_content = asset_content assets_repo_qname, style_asset_path
+            ::File.open((::File.join repo_clone.workdir, style_asset_path), 'wb') {|fd| fd.write style_asset_content }
+            index.add path: style_asset_path, oid: (::Rugged::Blob.from_workdir repo_clone, style_asset_path), mode: 0100644
+          end
+        end
       end
 
       ::File.unlink (::File.join repo_clone.workdir, 'README.md')
@@ -464,7 +527,7 @@ endif::[]
       ::Rugged::Commit.create repo_clone,
         author: commit_author,
         committer: commit_author,
-        message: 'Seed master document and link article repositories as submodules',
+        message: 'Seed spine document and create configuration file',
         parents: [repo_clone.head.target],
         tree: commit_tree,
         update_ref: 'HEAD'
@@ -473,13 +536,14 @@ endif::[]
     end
   end
 
-  # QUESTION should we move template_contents to an Editions::TemplateManager class?
+  # QUESTION should we move template_content to an Editions::TemplateManager class?
   # TODO create a method for retrieving raw contents (w/o substitutions)
-  def template_contents repo, path, vars = nil
-    content = begin
-      ::Base64.decode64 (@hub.contents repo, path: (::File.join 'templates', path)).content
-    rescue ::Octokit::NotFound
-      ::File.read (::File.join DATADIR, 'templates', path)
+  def template_content repo, path, vars = nil
+    template_path = ::File.join 'templates', path
+    content = if asset? repo, template_path
+      asset_content repo, template_path
+    else
+      ::File.read (::File.join DATADIR, template_path)
     end
 
     unless vars.nil_or_empty?
@@ -490,11 +554,37 @@ endif::[]
     content
   end
 
-  def contents? repo, path
-    @hub.contents repo, path: path
-    true
-  rescue ::Octokit::NotFound
-    false
+  def asset? repo_qname, path
+    if (dir = assets_clone_dir repo_qname)
+      ::File.exist? (::File.join dir, path)
+    else
+      false
+    end
+  end
+
+  def asset_content repo_qname, path
+    asset_path = ::File.join (assets_clone_dir repo_qname), path
+    if ::File.directory? asset_path
+      ::Dir.chdir asset_path do
+        ::Dir.glob '*' 
+      end
+    else
+      ::File.binread asset_path
+    end
+  end
+
+  # Clones the specified assets repository if necessary and returns the working directory.
+  def assets_clone_dir repo_qname
+    @assets_repo ||= begin
+      clone_dir = (::File.join ::Dir.tmpdir, (::File.basename repo_qname))
+      ::FileUtils.rm_r clone_dir if ::File.exist? clone_dir
+      ::Refined::Repository.clone_at (build_clone_url repo_qname), clone_dir
+    rescue
+      # no assets repository
+      false
+    end
+
+    @assets_repo ? @assets_repo.workdir : nil
   end
 
   # TODO move me to a utility mixin
