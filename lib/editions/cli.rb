@@ -57,9 +57,14 @@ pre do |global, cmd, opts, args|
 end
 
 on_error do |ex|
-  if ex.is_a? Interrupt
+  case ex
+  when Interrupt
     # add extra endline if Ctrl+C is used
     $terminal.newline
+    false
+  when ArgumentError, NameError
+    puts ex.message
+    puts ex.backtrace
     false
   else
     true
