@@ -24,8 +24,10 @@ class RepositoryManager
     repo_url.sub 'https://', %(https://#{@hub.access_token}:x-oauth-basic@)
   end
 
+  # FIXME need to be able to override access-level
   def submodule_repository_root
-    @repository_access == :private ? %(git@:#{@hub.host}) : %(https://#{@hub.host}/)
+    #@repository_access == :private ? %(git@:#{@hub.host}) : %(https://#{@hub.host}/)
+    %(https://#{@hub.host})
   end
 
   def contributor_team org, options = {}
@@ -577,6 +579,7 @@ endif::[]
   def assets_clone_dir repo_qname
     @assets_repo ||= begin
       clone_dir = (::File.join ::Dir.tmpdir, (::File.basename repo_qname))
+      # TODO should we try to reuse an existing clone??
       ::FileUtils.rm_r clone_dir if ::File.exist? clone_dir
       ::Refined::Repository.clone_at (build_clone_url repo_qname), clone_dir
     rescue
