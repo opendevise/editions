@@ -15,7 +15,7 @@ Sincerely,
 
 {author}
 
-[.signature,subs=-macros]
+[.signature%hardbreaks,subs=-macros]
 Publisher & Editor-in-Chief
 ifdef::email[{email}]
 {template-publication-url}
