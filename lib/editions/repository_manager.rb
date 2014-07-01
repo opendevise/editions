@@ -189,7 +189,7 @@ class RepositoryManager
       begin
         ::Refined::Submodule.add repo_clone,
           'docs',
-          %(#{submodule_repository_root}#{docs_repo_qname}.git),
+          %(#{submodule_repository_root}/#{docs_repo_qname}.git),
           # TODO cache the last commit sha of the docs repository
           (@hub.branch docs_repo_qname, 'master').commit.sha,
           index: index
@@ -406,6 +406,8 @@ v#{edition.number}, #{edition.pub_date.strftime '%Y-%m-%d'}
 :edition-handle: #{edition.handle}
 :volume: #{edition.volume}
 :issue: #{edition.issue}
+:seq: N
+:uuid: {pub-url}?id={seq}
 :listing-caption: Listing
 :codedir: code
 :imagesdir: images
