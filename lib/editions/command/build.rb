@@ -1,14 +1,23 @@
-require 'asciidoctor-epub3'
 require 'asciidoctor/extensions'
+require 'asciidoctor-epub3'
+#require 'asciidoctor/pdf_renderer'
+#require 'editions/pdf_extensions'
 
 desc 'Build the publication into one or more of the supported formats (e.g., epub3, kf8, pdf)'
 command :build do |cmd|; cmd.instance_eval do
+  SUPPORTED_FORMATS = %w(epub3 kf8 pdf)
+
   flag :f, :for,
     arg_name: '<login>',
     desc: 'Selectively build for the specified author (identified by login) (e.g., octocat)'
 
   switch :V, :validate,
     desc: 'Perform validation (currently only applies to epub3 format)',
+    negatable: false,
+    default_value: false
+
+  switch :z, :optimize,
+    desc: 'Optimized the generated file (applies to pdf format)',
     negatable: false,
     default_value: false
 
@@ -59,7 +68,11 @@ command :build do |cmd|; cmd.instance_eval do
     end
 
     # TODO validate at least one given
-    formats = ((args[0] || 'epub3,kf8').split ',') & ['epub3', 'kf8', 'pdf']
+    formats = if (formats_arg = args[0])
+      (formats_arg.split ',') & SUPPORTED_FORMATS
+    else
+      SUPPORTED_FORMATS.dup
+    end
 
     to_file = nil
     to_dir = edition_config.build_dir || 'build'
@@ -90,9 +103,20 @@ command :build do |cmd|; cmd.instance_eval do
     end
 
     formats.each do |format|
-      Asciidoctor::Epub3::Converter.convert_file spine_doc,
-          ebook_format: format, safe: :safe, to_dir: to_dir, to_file: to_file, validate: validate, extract: extract,
-          attributes: %(listing-caption=Listing buildfor=#{build_for} buildfor-#{build_for} builder=editions builder-editions#{styles_attribute}#{pygments_attributes})
+      case format
+      #when 'html'
+      # not implemented
+      when 'epub3', 'kf8'
+        Asciidoctor::Epub3::Converter.convert_file spine_doc,
+            ebook_format: format, safe: :safe, to_dir: to_dir, to_file: to_file, validate: validate, extract: extract,
+            attributes: %(listing-caption=Listing buildfor=#{build_for} buildfor-#{build_for} builder=editions builder-editions#{styles_attribute}#{pygments_attributes})
+      when 'pdf'
+        out, err, code = Open3.capture3 %(asciidoctor-pdf -a env-editions -a asciidoctor-pdf -a notitle --theme styles/pdf.yml -r #{File.dirname __FILE__}/../pdf_extensions -D #{to_dir} #{spine_doc})
+        if opts.optimize
+          # TODO set IMAGE_DPI=300 env var
+          _, _, _ = Open3.capture3 %(optimize-pdf #{File.join to_dir, edition_handle}.pdf)
+        end
+      end
     end
   end
 end; end

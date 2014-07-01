@@ -41,6 +41,8 @@ A toolchain for publishing periodicals that are aggregated from articles stored 
   s.add_runtime_dependency 'rugged', '~> 0.19.0'
   s.add_runtime_dependency 'asciidoctor', ['>= 1.5.0.preview.7', '< 1.6.0']
   s.add_runtime_dependency 'asciidoctor-epub3', '~> 1.0.0.dev'
+  s.add_runtime_dependency 'asciidoctor-pdf', '~> 1.0.0.dev'
+  s.add_runtime_dependency 'prawn-templates', '~> 0.0.3'
   s.add_runtime_dependency 'safe_yaml', '~> 1.0.3'
 
   # optional
