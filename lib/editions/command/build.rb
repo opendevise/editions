@@ -1,5 +1,6 @@
 require 'asciidoctor/extensions'
 require 'asciidoctor-epub3'
+require_relative '../cover_annotator'
 #require 'asciidoctor/pdf_renderer'
 #require 'editions/pdf_extensions'
 
@@ -86,6 +87,12 @@ command :build do |cmd|; cmd.instance_eval do
 
     # FIXME gepub has conflict with gli's version method
     GLI::App.send :undef_method, :version
+
+    begin
+      Editions::CoverAnnotator.new.annotate if Editions::CoverAnnotator.needs_annotating?
+    rescue StandardError => e
+      warn %(editions: Could not annotate cover: #{e.message})
+    end
 
     # TODO move extension to separate file
     Asciidoctor::Extensions.register do
