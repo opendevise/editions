@@ -128,7 +128,7 @@ class PdfRenderer
     define_grid columns: 2, rows: 16, row_gutter: 0, column_gutter: @theme.horizontal_rhythm
     grid([0,0], [4,1]).bounding_box do
       logo_width = 232
-      svg IO.read('images/jacket/nfjs-magazine.svg'), at: [(logo_width / 2), cursor], width: logo_width, position: :center
+      svg IO.read('images/jacket/nfjs-magazine.svg'), at: [((bounds.width / 2) - (logo_width / 2)).floor, cursor], width: logo_width
     end
 
     grid([4,0],[4,0]).bounding_box do
