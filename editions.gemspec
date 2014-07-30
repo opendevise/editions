@@ -10,7 +10,7 @@ Gem::Specification.new do |s|
 A toolchain for publishing periodicals that are aggregated from articles stored in GitHub repositories and composed in AsciiDoc.
   EOS
 
-  s.author = 'OpenDevise, Inc.'
+  s.author = 'OpenDevise Inc.'
   s.email = 'editions@opendevise.io'
   s.homepage = 'http://opendevise.io/projects/editions'
   s.license = 'MIT'
@@ -39,10 +39,10 @@ A toolchain for publishing periodicals that are aggregated from articles stored 
   s.add_runtime_dependency 'octokit', '~> 3.1.0'
   s.add_runtime_dependency 'commander', '~> 4.2.0'
   s.add_runtime_dependency 'rugged', '~> 0.19.0'
-  s.add_runtime_dependency 'asciidoctor', ['>= 1.5.0.preview.7', '< 1.6.0']
-  s.add_runtime_dependency 'asciidoctor-epub3', '~> 1.0.0.dev'
-  s.add_runtime_dependency 'asciidoctor-pdf', '~> 1.0.0.dev'
-  s.add_runtime_dependency 'prawn-templates', '~> 0.0.3'
+  s.add_runtime_dependency 'asciidoctor', ['>= 1.5.0.rc.2', '< 1.6.0']
+  s.add_runtime_dependency 'asciidoctor-epub3', '1.0.0.alpha.1'
+  s.add_runtime_dependency 'asciidoctor-pdf', '1.0.0.dev'
+  s.add_runtime_dependency 'rmagick', '~> 2.13.2'
   s.add_runtime_dependency 'safe_yaml', '~> 1.0.3'
 
   # optional
