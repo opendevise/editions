@@ -75,14 +75,13 @@ command :build do |cmd|; cmd.instance_eval do
       SUPPORTED_FORMATS.dup
     end
 
-    to_file = nil
     to_dir = edition_config.build_dir || 'build'
     validate = opts.validate
     extract = opts.extract
     # TODO auto-detect non-editor (how?)
     build_for = opts.for || 'editor'
 
-    pygments_attributes = (Gem::try_activate 'pygments.rb') ? ' source-highlighter=pygments pygments-css=style pygments-style=bw' : nil
+    #pygments_attributes = (Gem::try_activate 'pygments.rb') ? ' source-highlighter=pygments pygments-css=style pygments-style=bw' : nil
     styles_attribute = (::File.exist? 'styles/epub3.css') ? ' epub3-stylesdir=styles' : nil
 
     # FIXME gepub has conflict with gli's version method
@@ -96,7 +95,7 @@ command :build do |cmd|; cmd.instance_eval do
 
     # TODO move extension to separate file
     Asciidoctor::Extensions.register do
-      next unless @document.backend.to_s == 'epub3'
+      next unless @document.backend.to_s == 'epub3-xhtml5'
       treeprocessor do
         process do |document|
           if document.blocks? && (last_section = document.sections[-1]) && (last_section.title == 'About the Author')
@@ -112,13 +111,15 @@ command :build do |cmd|; cmd.instance_eval do
     formats.each do |format|
       case format
       #when 'html'
-      # not implemented
+      # not yet implemented
       when 'epub3', 'kf8'
-        Asciidoctor::Epub3::Converter.convert_file spine_doc,
-            ebook_format: format, safe: :safe, to_dir: to_dir, to_file: to_file, validate: validate, extract: extract,
-            attributes: %(listing-caption=Listing buildfor=#{build_for} buildfor-#{build_for} builder=editions builder-editions#{styles_attribute}#{pygments_attributes})
+        # QUESTION should we rely on listing-caption=Listing being defined in Asciidoctor EPUB?
+        Asciidoctor.convert_file spine_doc, safe: :safe, to_dir: to_dir, backend: :epub3,
+            attributes: %(compat-mode=legacy buildfor=#{build_for} buildfor-#{build_for} builder=editions builder-editions#{styles_attribute} ebook-format=#{format}#{validate ? ' ebook-validate' : nil}#{extract ? ' ebook-extract' : nil})
       when 'pdf'
-        out, err, code = Open3.capture3 %(asciidoctor-pdf -a env-editions -a asciidoctor-pdf -a notitle --theme styles/pdf.yml -r #{File.dirname __FILE__}/../pdf_extensions -D #{to_dir} #{spine_doc})
+        out, err, code = Open3.capture3 %(asciidoctor-pdf -a compat-mode=legacy -a env-editions -a asciidoctor-pdf -a notitle --theme styles/pdf.yml -r #{File.dirname __FILE__}/../pdf_extensions -D #{to_dir} #{spine_doc})
+        puts out unless out.empty?
+        warn err unless err.empty?
         if opts.optimize
           # TODO set IMAGE_DPI=300 env var
           _, _, _ = Open3.capture3 %(optimize-pdf #{File.join to_dir, edition_handle}.pdf)
