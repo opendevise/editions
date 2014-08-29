@@ -116,9 +116,9 @@ command :build do |cmd|; cmd.instance_eval do
       when 'epub3', 'kf8'
         # QUESTION should we rely on listing-caption=Listing being defined in Asciidoctor EPUB?
         Asciidoctor.convert_file spine_doc, safe: :safe, to_dir: to_dir, backend: :epub3,
-            attributes: %(compat-mode=legacy buildfor=#{build_for} buildfor-#{build_for} builder=editions builder-editions#{styles_attribute} ebook-format=#{format}#{validate ? ' ebook-validate' : nil}#{extract ? ' ebook-extract' : nil})
+            attributes: %(compat-mode=@ buildfor=#{build_for} buildfor-#{build_for} builder=editions builder-editions#{styles_attribute} ebook-format=#{format}#{validate ? ' ebook-validate' : nil}#{extract ? ' ebook-extract' : nil})
       when 'pdf'
-        out, err, code = Open3.capture3 %(asciidoctor-pdf -a compat-mode=legacy -a env-editions -a asciidoctor-pdf -a notitle --theme styles/pdf.yml -r #{File.dirname __FILE__}/../pdf_extensions -D #{to_dir} #{spine_doc})
+        out, err, code = Open3.capture3 %(asciidoctor-pdf -a compat-mode=@ -a env-editions -a asciidoctor-pdf -a notitle --theme styles/pdf.yml -r #{File.dirname __FILE__}/../pdf_extensions -D #{to_dir} #{spine_doc})
         puts out unless out.empty?
         warn err unless err.empty?
         if opts.optimize
