@@ -45,9 +45,16 @@ class CoverAnnotator
     @img_width = 1600
     @img_height = 2056
     @font_size = config['font-size']
-    # FIXME ship with M+-1p-medium in editions so we can reference the ttf
-    @font_family = 'M+-1p-medium'
-    #@font_family = '/usr/share/fonts/mplus/mplus-1p-medium.ttf'
+    #@font_family = 'M+-1p-medium'
+    asciidoctor_epub3_datadir = ::Gem.datadir 'asciidoctor-epub3'
+    unless (::File.basename asciidoctor_epub3_datadir) == 'data'
+      asciidoctor_epub3_datadir = ::File.dirname asciidoctor_epub3_datadir
+    end
+    @font_family = ::File.join asciidoctor_epub3_datadir, 'fonts', 'mplus1p-regular-latin-ext.ttf'
+    unless ::File.exist? @font_family
+      warn %(Could not find font file for adding article titles to the cover image: #{@font_family})
+      @font_family = 'Helvetica'
+    end
     @font_color = %(##{config['font-color'].upcase})
     @shadow_color = (config['shadow-color'] == 'transparent' ? 'transparent' : %(##{config['shadow-color'].upcase}))
     @shadow_thickness = config['shadow-thickness']
