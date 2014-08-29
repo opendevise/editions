@@ -76,6 +76,7 @@ command :build do |cmd|; cmd.instance_eval do
     end
 
     to_dir = edition_config.build_dir || 'build'
+    ::FileUtils.mkdir_p to_dir unless ::File.directory? to_dir
     validate = opts.validate
     extract = opts.extract
     # TODO auto-detect non-editor (how?)
