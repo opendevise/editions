@@ -39,9 +39,9 @@ A toolchain for publishing periodicals that are aggregated from articles stored 
   s.add_runtime_dependency 'octokit', '~> 3.1.0'
   s.add_runtime_dependency 'commander', '~> 4.2.0'
   s.add_runtime_dependency 'rugged', '~> 0.19.0'
-  s.add_runtime_dependency 'asciidoctor', ['>= 1.5.0.rc.2', '< 1.6.0']
+  s.add_runtime_dependency 'asciidoctor', '~> 1.5.0'
   s.add_runtime_dependency 'asciidoctor-epub3', '1.0.0.alpha.1'
-  s.add_runtime_dependency 'asciidoctor-pdf', '1.0.0.dev'
+  s.add_runtime_dependency 'asciidoctor-pdf', '1.5.0.alpha.1'
   s.add_runtime_dependency 'rmagick', '~> 2.13.2'
   s.add_runtime_dependency 'safe_yaml', '~> 1.0.3'
 
