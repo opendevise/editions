@@ -38,7 +38,7 @@ A toolchain for publishing periodicals that are aggregated from articles stored 
   s.add_runtime_dependency 'gli', '~> 2.10.0'
   s.add_runtime_dependency 'octokit', '~> 3.8.0'
   s.add_runtime_dependency 'commander', '~> 4.2.0'
-  s.add_runtime_dependency 'rugged', '~> 0.19.0'
+  s.add_runtime_dependency 'rugged', '~> 0.23.0b1'
   s.add_runtime_dependency 'asciidoctor', '~> 1.5.0'
   s.add_runtime_dependency 'asciidoctor-epub3', '1.0.0.alpha.1'
   s.add_runtime_dependency 'asciidoctor-pdf', '1.5.0.alpha.1'
