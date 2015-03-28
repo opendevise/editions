@@ -60,10 +60,10 @@ class RepositoryManager
       if (article_repo = create_article_repository org, edition, author, options)
         seed_article_repository article_repo, edition, options unless article_repo.seeded
         # Add author to authors & editors team (read-only)
-        @hub.add_team_member author_editor_team.id, author
+        @hub.add_team_membership author_editor_team.id, author
         @hub.add_team_repo author_editor_team.id, article_repo.full_name
         # Add author to team for this edition (read-write)
-        @hub.add_team_member edition_team.id, author
+        @hub.add_team_membership edition_team.id, author
         @hub.add_team_repo edition_team.id, article_repo.full_name
       end
       article_repo
@@ -84,6 +84,7 @@ class RepositoryManager
   def create_article_repository org, edition, author, options = {}
     author_resource = @hub.user author
     author_name = author_resource.name
+    author_name = author_name.nil_or_empty? ? "Heinz Kabutz" : author_name
     author_resource.initials = author_name.gsub InitialsRx, '\k<initial>'
     repo_name = [edition.handle, author] * '-'
     repo_qname = [org, repo_name] * '/'
@@ -216,7 +217,7 @@ class RepositoryManager
       unless (last_commit_sha = repo_clone.head.target).is_a? ::String
         last_commit_sha = repo_clone.head.target_id
       end
-      repo.seeded = true    
+      repo.seeded = true
     end
     last_commit_sha
   end
@@ -570,7 +571,7 @@ endif::[]
     asset_path = ::File.join (assets_clone_dir repo_qname), path
     if ::File.directory? asset_path
       ::Dir.chdir asset_path do
-        ::Dir.glob '*' 
+        ::Dir.glob '*'
       end
     else
       ::File.binread asset_path

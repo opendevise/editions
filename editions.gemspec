@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 require File.expand_path('lib/editions/version', File.dirname(__FILE__))
 
-Gem::Specification.new do |s| 
+Gem::Specification.new do |s|
   s.name = 'editions'
   s.version = Editions::VERSION
 
@@ -36,7 +36,7 @@ A toolchain for publishing periodicals that are aggregated from articles stored 
   s.add_development_dependency 'aruba', '~> 0.5.4'
 
   s.add_runtime_dependency 'gli', '~> 2.10.0'
-  s.add_runtime_dependency 'octokit', '~> 3.1.0'
+  s.add_runtime_dependency 'octokit', '~> 3.8.0'
   s.add_runtime_dependency 'commander', '~> 4.2.0'
   s.add_runtime_dependency 'rugged', '~> 0.19.0'
   s.add_runtime_dependency 'asciidoctor', '~> 1.5.0'
